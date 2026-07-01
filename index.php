@@ -1,5 +1,7 @@
 <?php
 
-echo "Forces Academy LMS Started";
+include "config/db.php";
+
+echo "Forces Academy LMS Database Connected Successfully";
 
 ?>
