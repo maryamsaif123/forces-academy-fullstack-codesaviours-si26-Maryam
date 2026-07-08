@@ -197,6 +197,7 @@ Welcome,
 
 </div>
 
+<div class="col-md-4 mb-4">
 
 <div class="card text-center p-4">
 
@@ -209,6 +210,11 @@ Welcome,
 <h5>Total Notices</h5>
 
 </div>
+
+</div>
+
+</div>
+
 
 <div class="card mt-4 p-4">
 
@@ -239,3 +245,4 @@ View Results
 </body>
 
 </html>
+
