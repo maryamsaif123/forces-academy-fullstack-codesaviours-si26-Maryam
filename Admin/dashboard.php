@@ -246,4 +246,3 @@ View Results
 
 </html>
 
-"Create responsive admin dashboard with Bootstrap layout
