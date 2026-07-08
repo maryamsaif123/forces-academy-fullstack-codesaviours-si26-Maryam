@@ -264,4 +264,3 @@ Logout
 
 </nav>
 
-Improve sidebar navigation and active menu states
