@@ -1,60 +1,46 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['admin'])) {
+if(!isset($_SESSION['admin'])){
     header("Location: login.php");
     exit();
 }
 
 include("../config/database.php");
 
-$search = "";
+$query = mysqli_query($conn,"SELECT * FROM students ORDER BY id DESC");
 
-if(isset($_GET['search'])){
-    $search = mysqli_real_escape_string($conn,$_GET['search']);
-
-    $query = "SELECT * FROM students
-              WHERE full_name LIKE '%$search%'
-              OR email LIKE '%$search%'
-              OR roll_number LIKE '%$search%'
-              ORDER BY id DESC";
-}
-else{
-    $query = "SELECT * FROM students ORDER BY id DESC";
-}
-
-$result = mysqli_query($conn,$query);
+$totalStudents = mysqli_num_rows($query);
 ?>
+<?php include("sidebar.php"); ?>
 
-<!DOCTYPE html>
-<html>
-
-<head>
-
-<title>Manage Students</title>
-
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
-
-</head>
-
-<body class="bg-light">
+<div class="main-content">
 
 <?php include("navbar.php"); ?>
 
-<div class="container mt-5">
+<div class="container-fluid">
 
-<div class="d-flex justify-content-between mb-4">
+<div class="d-flex justify-content-between align-items-center mb-4">
 
-<h2>
-<i class="fa fa-users"></i>
-Manage Students
+<div>
+
+<h2 class="fw-bold">
+
+Student Management
+
 </h2>
 
-<a href="add_student.php" class="btn btn-success">
+<p class="text-muted">
 
-<i class="fa fa-plus"></i>
+Manage all registered students.
+
+</p>
+
+</div>
+
+<a href="add_student.php" class="btn btn-success btn-lg">
+
+<i class="fas fa-plus"></i>
 
 Add Student
 
@@ -62,36 +48,59 @@ Add Student
 
 </div>
 
+<div class="row mb-4">
 
-<form method="GET">
+<div class="col-md-4">
 
-<div class="input-group mb-4">
+<div class="stats-card students">
 
-<input
-type="text"
-name="search"
-class="form-control"
-placeholder="Search Student..."
-value="<?php echo $search;?>">
+<div>
 
-<button class="btn btn-primary">
+<h6>Total Students</h6>
 
-Search
+<h2>
 
-</button>
+<?php echo $totalStudents; ?>
+
+</h2>
 
 </div>
 
-</form>
+<i class="fas fa-user-graduate"></i>
 
+</div>
 
-<table class="table table-bordered table-hover bg-white">
+</div>
 
-<thead class="table-dark">
+</div>
+
+<div class="card dashboard-card mb-4">
+
+<div class="card-body">
+
+<input
+type="text"
+id="searchStudent"
+class="form-control"
+placeholder="🔍 Search Student">
+
+</div>
+
+</div>
+
+<div class="card dashboard-card">
+
+<div class="card-body">
+
+<div class="table-responsive">
+
+<table class="table table-hover align-middle" id="studentTable">
+
+<thead class="table-success">
 
 <tr>
 
-<th>ID</th>
+<th>Avatar</th>
 
 <th>Name</th>
 
@@ -101,11 +110,7 @@ Search
 
 <th>Class</th>
 
-<th width="180">
-
-Action
-
-</th>
+<th>Actions</th>
 
 </tr>
 
@@ -115,7 +120,7 @@ Action
 
 <?php
 
-while($row=mysqli_fetch_assoc($result))
+while($row=mysqli_fetch_assoc($query))
 {
 
 ?>
@@ -124,52 +129,61 @@ while($row=mysqli_fetch_assoc($result))
 
 <td>
 
-<?php echo $row['id'];?>
+<img
+src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
+width="50"
+class="rounded-circle">
 
 </td>
 
 <td>
 
-<?php echo $row['full_name'];?>
+<?php echo $row['full_name']; ?>
 
 </td>
 
 <td>
 
-<?php echo $row['email'];?>
+<?php echo $row['email']; ?>
 
 </td>
 
 <td>
 
-<?php echo $row['roll_number'];?>
+<?php echo $row['roll_number']; ?>
 
 </td>
 
 <td>
 
-<?php echo $row['class'];?>
+<?php echo $row['class']; ?>
 
 </td>
 
 <td>
 
 <a
-href="edit_student.php?id=<?php echo $row['id'];?>"
-class="btn btn-warning btn-sm">
+href="view_student.php?id=<?php echo $row['id']; ?>"
+class="btn btn-info btn-sm">
 
-Edit
+<i class="fas fa-eye"></i>
 
 </a>
 
+<a
+href="edit_student.php?id=<?php echo $row['id']; ?>"
+class="btn btn-warning btn-sm">
+
+<i class="fas fa-edit"></i>
+
+</a>
 
 <a
-href="delete_student.php?id=<?php echo $row['id'];?>"
+href="delete_student.php?id=<?php echo $row['id']; ?>"
 class="btn btn-danger btn-sm"
+onclick="return confirm('Delete Student?')">
 
-onclick="return confirm('Are you sure you want to delete this student?');">
-
-Delete
+<i class="fas fa-trash"></i>
 
 </a>
 
@@ -189,8 +203,29 @@ Delete
 
 </div>
 
-<?php include("footer.php"); ?>
+</div>
 
-</body>
+</div>
 
-</html>
+</div>
+
+</div>
+
+<script>
+document.getElementById("searchStudent").addEventListener("keyup", function () {
+
+let value = this.value.toLowerCase();
+
+let rows = document.querySelectorAll("#studentTable tbody tr");
+
+rows.forEach(function(row){
+
+row.style.display =
+row.innerText.toLowerCase().includes(value)
+? ""
+: "none";
+
+});
+
+});
+</script>

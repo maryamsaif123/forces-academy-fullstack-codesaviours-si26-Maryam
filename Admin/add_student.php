@@ -1,90 +1,155 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['admin'])) {
+if(!isset($_SESSION['admin'])){
     header("Location: login.php");
     exit();
 }
 
 include("../config/database.php");
 
-$message = "";
+$message="";
 
-if (isset($_POST['add_student'])) {
+if(isset($_POST['save'])){
 
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $roll_number = mysqli_real_escape_string($conn, $_POST['roll_number']);
-    $class = mysqli_real_escape_string($conn, $_POST['class']);
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+$full_name=$_POST['full_name'];
+$email=$_POST['email'];
+$password=password_hash($_POST['password'],PASSWORD_DEFAULT);
+$roll_number=$_POST['roll_number'];
+$class=$_POST['class'];
 
-    // Check if email already exists
-    $check = mysqli_query($conn, "SELECT * FROM students WHERE email='$email'");
+$sql="INSERT INTO students(full_name,email,password,roll_number,class)
+VALUES('$full_name','$email','$password','$roll_number','$class')";
 
-    if (mysqli_num_rows($check) > 0) {
+if(mysqli_query($conn,$sql)){
 
-        $message = "<div class='alert alert-danger'>Email already exists.</div>";
+$message="<div class='alert alert-success'>Student Added Successfully!</div>";
 
-    } else {
+}else{
 
-        $query = "INSERT INTO students(full_name,email,roll_number,class,password)
-                  VALUES('$full_name','$email','$roll_number','$class','$password')";
+$message="<div class='alert alert-danger'>Something went wrong!</div>";
 
-        if (mysqli_query($conn, $query)) {
+}
 
-            $message = "<div class='alert alert-success'>Student added successfully.</div>";
-
-        } else {
-
-            $message = "<div class='alert alert-danger'>Error: ".mysqli_error($conn)."</div>";
-
-        }
-    }
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Add Student</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+
+<link rel="stylesheet" href="dashboard.css">
+
+<style>
+
+.form-card{
+
+background:white;
+
+border-radius:25px;
+
+padding:40px;
+
+box-shadow:0 15px 40px rgba(0,0,0,.12);
+
+}
+
+.avatar{
+
+width:120px;
+
+height:120px;
+
+border-radius:50%;
+
+border:5px solid #22c55e;
+
+margin-bottom:20px;
+
+}
+
+.form-control{
+
+height:55px;
+
+border-radius:12px;
+
+}
+
+.btn-save{
+
+background:#16a34a;
+
+color:white;
+
+height:55px;
+
+border-radius:12px;
+
+font-size:18px;
+
+}
+
+.btn-save:hover{
+
+background:#15803d;
+
+color:white;
+
+}
+
+</style>
+
 </head>
 
-<body class="bg-light">
+<body>
+
+<?php include("sidebar.php"); ?>
+
+<div class="main-content">
 
 <?php include("navbar.php"); ?>
 
-<div class="container mt-5">
+<div class="container">
 
-<div class="row justify-content-center">
+<div class="form-card">
 
-<div class="col-md-8">
+<div class="text-center">
 
-<div class="card shadow">
+<img
+src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
+class="avatar">
 
-<div class="card-header bg-success text-white">
+<h2>
 
-<h3>Add New Student</h3>
+Add New Student
+
+</h2>
+
+<p class="text-muted">
+
+Register a new student into the LMS
+
+</p>
 
 </div>
-
-<div class="card-body">
 
 <?php echo $message; ?>
 
 <form method="POST">
 
-<div class="mb-3">
+<div class="row">
 
-<label class="form-label">Full Name</label>
+<div class="col-md-6 mb-3">
+
+<label>Full Name</label>
 
 <input
 type="text"
@@ -94,9 +159,9 @@ required>
 
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
-<label class="form-label">Email</label>
+<label>Email</label>
 
 <input
 type="email"
@@ -106,33 +171,9 @@ required>
 
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
-<label class="form-label">Roll Number</label>
-
-<input
-type="text"
-name="roll_number"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label class="form-label">Class</label>
-
-<input
-type="text"
-name="class"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label class="form-label">Password</label>
+<label>Password</label>
 
 <input
 type="password"
@@ -142,20 +183,46 @@ required>
 
 </div>
 
+<div class="col-md-6 mb-3">
+
+<label>Roll Number</label>
+
+<input
+type="text"
+name="roll_number"
+class="form-control"
+required>
+
+</div>
+
+<div class="col-md-12 mb-3">
+
+<label>Class</label>
+
+<input
+type="text"
+name="class"
+class="form-control"
+required>
+
+</div>
+
+<div class="col-md-12">
+
 <button
 type="submit"
-name="add_student"
-class="btn btn-success">
+name="save"
+class="btn btn-save w-100">
+
+<i class="fas fa-user-plus"></i>
 
 Add Student
 
 </button>
 
-<a href="manage_students.php" class="btn btn-secondary">
+</div>
 
-Back
-
-</a>
+</div>
 
 </form>
 
@@ -164,12 +231,6 @@ Back
 </div>
 
 </div>
-
-</div>
-
-</div>
-
-<?php include("footer.php"); ?>
 
 </body>
 

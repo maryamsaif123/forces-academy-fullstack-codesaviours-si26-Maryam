@@ -1,14 +1,16 @@
 <?php
+
 session_start();
 
-if (!isset($_SESSION['student'])) {
+if (!isset($_SESSION['student_name'])) {
     header("Location: login.php");
     exit();
 }
 
 include("../config/database.php");
 
-$courses = mysqli_query($conn, "SELECT * FROM courses ORDER BY id DESC");
+$query = mysqli_query($conn, "SELECT * FROM courses ORDER BY created_at DESC");
+
 ?>
 
 <!DOCTYPE html>
@@ -20,7 +22,7 @@ $courses = mysqli_query($conn, "SELECT * FROM courses ORDER BY id DESC");
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>My Courses</title>
+<title>Available Courses</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -29,28 +31,39 @@ $courses = mysqli_query($conn, "SELECT * FROM courses ORDER BY id DESC");
 <style>
 
 body{
-    background:#f4f6f9;
-    margin:0;
-    font-family:Arial;
-}
-
-.main{
-    margin-left:240px;
-}
-
-.content{
-    padding:30px;
+    background:#f5f7fb;
 }
 
 .course-card{
+
     border:none;
-    border-radius:15px;
-    box-shadow:0px 5px 15px rgba(0,0,0,.1);
+
+    border-radius:20px;
+
     transition:.3s;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.1);
+
 }
 
 .course-card:hover{
-    transform:translateY(-5px);
+
+    transform:translateY(-8px);
+
+}
+
+.course-icon{
+
+    font-size:70px;
+
+    color:#198754;
+
+}
+
+.card-footer{
+
+    background:white;
+
 }
 
 </style>
@@ -59,19 +72,13 @@ body{
 
 <body>
 
-<?php include("sidebar.php"); ?>
+<div class="container mt-5">
 
-<div class="main">
+<h2 class="mb-4 text-success">
 
-<?php include("navbar.php"); ?>
+<i class="fas fa-book-open"></i>
 
-<div class="content">
-
-<h2 class="mb-4">
-
-<i class="fa fa-book"></i>
-
-My Courses
+Available Courses
 
 </h2>
 
@@ -79,21 +86,25 @@ My Courses
 
 <?php
 
-if(mysqli_num_rows($courses)>0){
+if(mysqli_num_rows($query)>0)
+{
 
-while($row=mysqli_fetch_assoc($courses)){
+while($course=mysqli_fetch_assoc($query))
+{
 
 ?>
 
-<div class="col-md-6 mb-4">
+<div class="col-lg-4 col-md-6 mb-4">
 
-<div class="card course-card">
+<div class="card course-card h-100">
 
-<div class="card-body">
+<div class="card-body text-center">
 
-<h4 class="text-success">
+<i class="fas fa-laptop-code course-icon mb-3"></i>
 
-<?php echo $row['course_name']; ?>
+<h4>
+
+<?php echo htmlspecialchars($course['course_name']); ?>
 
 </h4>
 
@@ -101,27 +112,73 @@ while($row=mysqli_fetch_assoc($courses)){
 
 <p>
 
-<strong>Course Code:</strong>
-
-<?php echo $row['course_code']; ?>
+<?php echo htmlspecialchars($course['description']); ?>
 
 </p>
 
 <p>
 
-<strong>Instructor:</strong>
+<strong>
 
-<?php echo $row['instructor']; ?>
+Teacher:
 
-</p>
+</strong>
 
-<p>
-
-<strong>Duration:</strong>
-
-<?php echo $row['duration']; ?>
+<?php echo htmlspecialchars($course['teacher_name']); ?>
 
 </p>
+
+</div>
+
+<div class="card-footer">
+
+<?php
+
+if(!empty($course['notes_pdf']))
+{
+
+?>
+
+<a
+href="../uploads/<?php echo htmlspecialchars($course['notes_pdf']); ?>"
+target="_blank"
+class="btn btn-success btn-sm">
+
+<i class="fas fa-file-pdf"></i>
+
+Notes
+
+</a>
+
+<?php
+
+}
+
+?>
+
+<?php
+
+if(!empty($course['video_link']))
+{
+
+?>
+
+<a
+href="<?php echo htmlspecialchars($course['video_link']); ?>"
+target="_blank"
+class="btn btn-danger btn-sm">
+
+<i class="fab fa-youtube"></i>
+
+Watch Video
+
+</a>
+
+<?php
+
+}
+
+?>
 
 </div>
 
@@ -133,13 +190,33 @@ while($row=mysqli_fetch_assoc($courses)){
 
 }
 
-}else{
+}
+
+else
+
+{
 
 ?>
 
-<div class="alert alert-warning">
+<div class="col-12">
 
-No Courses Available.
+<div class="alert alert-warning text-center p-5">
+
+<i class="fas fa-book fa-4x mb-3"></i>
+
+<h3>
+
+No Courses Available
+
+</h3>
+
+<p>
+
+Courses will appear here once added by the administrator.
+
+</p>
+
+</div>
 
 </div>
 
@@ -150,10 +227,6 @@ No Courses Available.
 ?>
 
 </div>
-
-</div>
-
-<?php include("footer.php"); ?>
 
 </div>
 

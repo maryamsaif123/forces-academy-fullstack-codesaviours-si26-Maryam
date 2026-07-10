@@ -1,53 +1,98 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container-fluid">
+<?php
 
-        <a class="navbar-brand" href="dashboard.php">
-            🎓 Forces Academy LMS
-        </a>
+$date = date("l, d F Y");
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+?>
 
-            <span class="navbar-toggler-icon"></span>
+<nav class="top-navbar">
 
-        </button>
+<div class="left-side">
 
-        <div class="collapse navbar-collapse" id="navbarNav">
+<h3>
 
-            <ul class="navbar-nav ms-auto">
+Dashboard
 
-                <li class="nav-item">
-                    <a class="nav-link" href="dashboard.php">
-                        Dashboard
-                    </a>
-                </li>
+</h3>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="manage_students.php">
-                        Students
-                    </a>
-                </li>
+<p>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="manage_courses.php">
-    Courses
-</a>
-                </li>
+<?php echo $date; ?>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        Notices
-                    </a>
-                </li>
+</p>
 
-                <li class="nav-item">
-                    <a class="nav-link text-warning" href="logout.php">
-                        Logout
-                    </a>
-                </li>
+</div>
 
-            </ul>
+<div class="right-side">
 
-        </div>
+<!-- Search -->
 
-    </div>
+<div class="search-box">
+
+<i class="fas fa-search"></i>
+
+<input
+type="text"
+placeholder="Search...">
+
+</div>
+
+<!-- Notification -->
+
+<div class="notification">
+
+<i class="fas fa-bell"></i>
+
+<span class="badge">
+
+3
+
+</span>
+
+</div>
+
+<!-- Messages -->
+
+<div class="notification">
+
+<i class="fas fa-envelope"></i>
+
+<span class="badge bg-success">
+
+2
+
+</span>
+
+</div>
+
+<!-- Admin Profile -->
+
+<div class="admin-profile">
+
+<img
+src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png">
+
+<div>
+
+<h6>
+
+<?php
+
+echo $_SESSION['admin'];
+
+?>
+
+</h6>
+
+<small>
+
+Administrator
+
+</small>
+
+</div>
+
+</div>
+
+</div>
+
 </nav>
