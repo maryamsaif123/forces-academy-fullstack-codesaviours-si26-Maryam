@@ -686,4 +686,237 @@ width:150px;
 
 }
 
+.course-card{
+
+transition:.35s;
+
+overflow:hidden;
+
+border-radius:20px;
+
+}
+
+.course-card img{
+
+transition:.4s;
+
+}
+
+.course-card:hover{
+
+transform:translateY(-10px);
+
+box-shadow:0 20px 40px rgba(0,0,0,.15);
+
+}
+
+.course-card:hover img{
+
+transform:scale(1.05);
+
+}
+
+.course-card .btn{
+
+border-radius:12px;
+
+font-weight:600;
+
+}
+
+.course-card .badge{
+
+padding:8px 14px;
+
+font-size:13px;
+
+}
+
+#courseSearch{
+
+border-radius:15px;
+
+height:55px;
+
+}
+
+#courseSearch:focus{
+
+box-shadow:0 0 15px rgba(25,135,84,.25);
+
+border-color:#198754;
+
+}
+
+.btn-lg{
+
+border-radius:14px;
+
+font-weight:600;
+
+}
+
+.card{
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-5px);
+
+}
+
+.bg-primary{
+
+background:linear-gradient(135deg,#2563eb,#1d4ed8)!important;
+
+}
+
+.course-card{
+
+transition:.35s;
+
+}
+
+.course-card:hover{
+
+box-shadow:0 20px 40px rgba(0,0,0,.18);
+
+}
+
+}
+
+.dark-mode{
+
+background:#1f2937 !important;
+
+color:white;
+
+}
+
+.dark-mode .card{
+
+background:#374151;
+
+color:white;
+
+}
+
+.dark-mode .card-header{
+
+background:#374151 !important;
+
+color:white;
+
+}
+
+.dark-mode .table{
+
+color:white;
+
+}
+
+.quick-card{
+
+transition:.3s;
+
+}
+
+.quick-card:hover{
+
+transform:translateY(-8px);
+
+box-shadow:0 20px 40px rgba(0,0,0,.15);
+
+}
+
+.hero img{
+
+animation:floatImage 4s ease-in-out infinite;
+
+}
+
+@keyframes floatImage{
+
+0%{
+
+transform:translateY(0);
+
+}
+
+50%{
+
+transform:translateY(-12px);
+
+}
+
+100%{
+
+transform:translateY(0);
+
+}
+
+}
+
+.card{
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-5px);
+
+}
+#resultsTable tbody tr{
+
+transition:.3s;
+
+}
+
+#resultsTable tbody tr:hover{
+
+transform:scale(1.01);
+
+background:#f8fafc;
+
+}
+
+.progress{
+
+height:8px;
+
+border-radius:20px;
+
+}
+
+.progress-bar{
+
+border-radius:20px;
+
+}
+
+.card{
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-5px);
+
+box-shadow:0 20px 40px rgba(0,0,0,.12);
+
+}
+
+.badge{
+
+font-size:14px;
+
+padding:8px 12px;
+
 }
