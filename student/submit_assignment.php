@@ -1,55 +1,127 @@
 <?php
 session_start();
+include("../config/database.php");
 
-if (!isset($_SESSION['student_id'])) {
+if(!isset($_SESSION['student_id'])){
     header("Location: login.php");
     exit();
 }
 
-include("../config/database.php");
-
 $student_id = $_SESSION['student_id'];
 
-if (!isset($_GET['id'])) {
+if(!isset($_GET['id'])){
     header("Location: assignments.php");
     exit();
 }
 
-$assignment_id = intval($_GET['id']);
+$assignment_id = (int)$_GET['id'];
 
-$assignment = mysqli_query($conn,"
-SELECT assignments.*, courses.course_name
+/* Fetch Assignment */
+
+$assignmentQuery = mysqli_query($conn,"
+SELECT
+assignments.*,
+courses.course_name
 FROM assignments
 LEFT JOIN courses
-ON assignments.course_id=courses.id
+ON assignments.course_id = courses.id
 WHERE assignments.id='$assignment_id'
+LIMIT 1
 ");
 
-$data = mysqli_fetch_assoc($assignment);
+if(mysqli_num_rows($assignmentQuery)==0){
 
-$message = "";
+header("Location: assignments.php");
 
-// Check duplicate submission
-$check = mysqli_query($conn,"
+exit();
+
+}
+
+$assignment=mysqli_fetch_assoc($assignmentQuery);
+
+/* Check Already Submitted */
+
+$check=mysqli_query($conn,"
 SELECT *
+
 FROM submissions
-WHERE assignment_id='$assignment_id'
-AND student_id='$student_id'
+
+WHERE
+
+student_id='$student_id'
+
+AND
+
+assignment_id='$assignment_id'
+
 ");
 
-if(mysqli_num_rows($check)>0){
+$alreadySubmitted=mysqli_num_rows($check);
+
+/* Upload Assignment */
+
+$message="";
+
+if(isset($_POST['submit_assignment'])){
+
+if($alreadySubmitted>0){
 
 $message="<div class='alert alert-warning'>
 You have already submitted this assignment.
 </div>";
 
+}else{
+
+$file=$_FILES['assignment_file'];
+
+$fileName=time()."_".$file['name'];
+
+$tmpName=$file['tmp_name'];
+
+$folder="../uploads/".$fileName;
+
+$fileType=strtolower(pathinfo($fileName,PATHINFO_EXTENSION));
+
+$allowed=['pdf','zip','doc','docx','jpg','jpeg','png'];
+
+if(in_array($fileType,$allowed)){
+
+move_uploaded_file($tmpName,$folder);
+
+mysqli_query($conn,"
+INSERT INTO submissions
+
+(student_id,assignment_id,file_path,status,submitted_at)
+
+VALUES
+
+('$student_id',
+'$assignment_id',
+'$fileName',
+'Pending',
+NOW())
+
+");
+
+$message="<div class='alert alert-success'>
+Assignment submitted successfully.
+</div>";
+
+}else{
+
+$message="<div class='alert alert-danger'>
+Only PDF, DOC, DOCX, ZIP and Images are allowed.
+</div>";
+
 }
 
+}
+
+}
 ?>
 
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 
 <head>
 
@@ -61,105 +133,7 @@ You have already submitted this assignment.
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="dashboard.css">
-
-<style>
-
-.upload-card{
-
-background:white;
-
-padding:35px;
-
-border-radius:20px;
-
-box-shadow:0 10px 25px rgba(0,0,0,.1);
-
-}
-
-.page-header{
-
-background:linear-gradient(135deg,#198754,#22c55e);
-
-padding:35px;
-
-border-radius:20px;
-
-color:white;
-
-margin-bottom:30px;
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-}
-
-.upload-card{
-
-transition:.3s;
-
-}
-
-.upload-card:hover{
-
-box-shadow:0 20px 40px rgba(0,0,0,.15);
-
-}
-
-.form-control{
-
-height:55px;
-
-border-radius:12px;
-
-}
-
-textarea.form-control{
-
-height:auto;
-
-}
-
-.btn-success{
-
-height:55px;
-
-border-radius:12px;
-
-font-size:18px;
-
-font-weight:600;
-
-}
-
-.btn-success:hover{
-
-transform:translateY(-2px);
-
-}
-
-@media(max-width:768px){
-
-.page-header{
-
-flex-direction:column;
-
-text-align:center;
-
-}
-
-.page-header .btn{
-
-margin-top:20px;
-
-}
-
-}
-
-</style>
+<link rel="stylesheet" href="../css/dashboard.css">
 
 </head>
 
@@ -173,7 +147,13 @@ margin-top:20px;
 
 <div class="container-fluid">
 
+<!-- Hero -->
+
 <div class="page-header">
+
+<div class="d-flex justify-content-between align-items-center">
+
+<div>
 
 <h2>
 
@@ -183,7 +163,19 @@ Submit Assignment
 
 </h2>
 
-<a href="assignments.php" class="btn btn-light">
+<p>
+
+Upload your completed assignment before the deadline.
+
+</p>
+
+</div>
+
+<a href="assignments.php"
+
+class="btn btn-light">
+
+<i class="fas fa-arrow-left"></i>
 
 Back
 
@@ -191,95 +183,139 @@ Back
 
 </div>
 
+</div>
+
 <?php echo $message; ?>
 
-<div class="upload-card">
+<div class="row">
 
-<form method="POST" enctype="multipart/form-data">
+<!-- Assignment Card -->
 
-<div class="mb-4">
+<div class="col-lg-4">
 
-<label class="form-label fw-bold">
+<div class="card shadow border-0 rounded-4 mb-4">
 
-Assignment Title
+<div class="card-body">
 
-</label>
+<span class="badge bg-success mb-3">
 
-<input
+<?php echo htmlspecialchars($assignment['course_name']); ?>
 
-type="text"
+</span>
 
-class="form-control"
+<h3>
 
-value="<?php echo $data['title']; ?>"
+<?php echo htmlspecialchars($assignment['title']); ?>
 
-readonly>
+</h3>
 
-</div>
+<p class="text-muted">
 
-<div class="mb-4">
+<?php echo nl2br(htmlspecialchars($assignment['description'])); ?>
 
-<label class="form-label fw-bold">
+</p>
 
-Course
+<hr>
 
-</label>
+<p>
 
-<input
+<strong>
 
-type="text"
+Deadline
 
-class="form-control"
+</strong>
 
-value="<?php echo $data['course_name']; ?>"
+<br>
 
-readonly>
+<span class="text-danger">
 
-</div>
+<i class="fas fa-calendar"></i>
 
-<div class="mb-4">
+<?php echo date("d M Y",strtotime($assignment['deadline'])); ?>
 
-<label class="form-label fw-bold">
+</span>
 
-Due Date
+</p>
 
-</label>
+<?php
 
-<input
+$status=(strtotime($assignment['deadline'])>=time())
 
-type="text"
+? "Open"
 
-class="form-control"
+: "Closed";
 
-value="<?php echo date('d M Y',strtotime($data['due_date'])); ?>"
+?>
 
-readonly>
+<span class="badge bg-<?php
 
-</div>
+echo ($status=="Open")
 
-<div class="mb-4">
+?"success"
 
-<label class="form-label fw-bold">
+:"danger";
 
-Assignment Description
+?>">
 
-</label>
+<?php echo $status; ?>
 
-<textarea
-
-class="form-control"
-
-rows="5"
-
-readonly><?php echo $data['description']; ?></textarea>
+</span>
 
 </div>
 
-<div class="mb-4">
+</div>
 
-<label class="form-label fw-bold">
+</div>
+
+<!-- Upload Card -->
+
+<div class="col-lg-8">
+
+<div class="card shadow border-0 rounded-4">
+
+<div class="card-body">
+
+<h3>
+
+<i class="fas fa-cloud-upload-alt"></i>
 
 Upload Assignment
+
+</h3>
+
+<hr>
+
+<?php
+
+if($alreadySubmitted){
+
+?>
+
+<div class="alert alert-success">
+
+<i class="fas fa-check-circle"></i>
+
+You have already submitted this assignment.
+
+</div>
+
+<?php
+
+}else{
+
+?>
+
+<form
+
+method="POST"
+
+enctype="multipart/form-data">
+
+<div class="mb-4">
+
+<label class="form-label">
+
+Choose Assignment File
 
 </label>
 
@@ -291,19 +327,31 @@ name="assignment_file"
 
 class="form-control"
 
-accept=".pdf,.doc,.docx"
-
 required>
 
-<small class="text-muted">
+<div class="form-text">
 
-Allowed Files: PDF, DOC, DOCX (Max 10MB)
+Allowed:
 
-</small>
+PDF,
+
+DOC,
+
+DOCX,
+
+ZIP,
+
+JPG,
+
+PNG
 
 </div>
 
-<div class="d-grid">
+</div>
+
+<div class="row">
+
+<div class="col-md-6">
 
 <button
 
@@ -311,9 +359,9 @@ type="submit"
 
 name="submit_assignment"
 
-class="btn btn-success btn-lg">
+class="btn btn-success btn-lg w-100">
 
-<i class="fas fa-upload"></i>
+<i class="fas fa-paper-plane"></i>
 
 Submit Assignment
 
@@ -321,124 +369,156 @@ Submit Assignment
 
 </div>
 
+<div class="col-md-6">
+
+<a
+
+href="assignments.php"
+
+class="btn btn-secondary btn-lg w-100">
+
+<i class="fas fa-times"></i>
+
+Cancel
+
+</a>
+
+</div>
+
+</div>
+
+</form>
+
 <?php
-
-if(isset($_POST['submit_assignment'])){
-
-$file=$_FILES['assignment_file'];
-
-$fileName=time()."_".basename($file['name']);
-
-$target="../uploads/assignment_files/".$fileName;
-
-$fileType=strtolower(pathinfo($target,PATHINFO_EXTENSION));
-
-$allowed=array("pdf","doc","docx");
-
-if(in_array($fileType,$allowed)){
-
-if(move_uploaded_file($file['tmp_name'],$target)){
-
-mysqli_query($conn,"
-INSERT INTO submissions
-(assignment_id,student_id,file_path,status)
-VALUES
-('$assignment_id','$student_id','$fileName','submitted')
-");
-
-echo "<script>
-
-alert('Assignment Submitted Successfully!');
-
-window.location='assignments.php';
-
-</script>";
-
-}else{
-
-echo "<div class='alert alert-danger mt-3'>
-
-File upload failed.
-
-</div>";
-
-}
-
-}else{
-
-echo "<div class='alert alert-danger mt-3'>
-
-Only PDF, DOC and DOCX files are allowed.
-
-</div>";
-
-}
 
 }
 
 ?>
 
-</form>
+</div>
+
+</div>
 
 </div>
 
 </div>
 
-<?php include("footer.php"); ?>
+<!-- Upload Tips -->
+
+<div class="row mt-4">
+
+<div class="col-lg-12">
+
+<div class="card border-0 shadow rounded-4">
+
+<div class="card-body">
+
+<h5>
+
+<i class="fas fa-lightbulb text-warning"></i>
+
+Submission Guidelines
+
+</h5>
+
+<ul class="mb-0">
+
+<li>Upload only your own work.</li>
+
+<li>Accepted file types:
+PDF, DOC, DOCX, ZIP, JPG, PNG.</li>
+
+<li>Maximum file size: 10 MB.</li>
+
+<li>Late submissions may not be accepted.</li>
+
+<li>Check your file before submitting.</li>
+
+</ul>
 
 </div>
 
-<script>
+</div>
 
-// ==============================
-// File Name Preview
-// ==============================
+</div>
 
-const fileInput = document.querySelector("input[name='assignment_file']");
+</div>
 
-fileInput.addEventListener("change",function(){
+</div>
 
-if(this.files.length>0){
+</div>
 
-alert("Selected File: " + this.files[0].name);
+<style>
+
+.page-header{
+
+background:linear-gradient(135deg,#16a34a,#22c55e);
+
+padding:35px;
+
+border-radius:20px;
+
+color:white;
+
+margin-bottom:30px;
 
 }
 
-});
+.card{
 
-// ==============================
-// Upload Card Animation
-// ==============================
+border:none;
 
-const uploadCard=document.querySelector(".upload-card");
+border-radius:20px;
 
-uploadCard.addEventListener("mouseenter",function(){
+}
 
-this.style.transform="translateY(-5px)";
+.form-control{
 
-this.style.transition=".3s";
+border-radius:12px;
 
-});
+padding:12px;
 
-uploadCard.addEventListener("mouseleave",function(){
+}
 
-this.style.transform="translateY(0px)";
+.btn{
 
-});
+border-radius:12px;
 
-// ==============================
-// File Size Validation (10MB)
-// ==============================
+padding:12px;
 
-fileInput.addEventListener("change",function(){
+font-weight:600;
 
-const maxSize = 10 * 1024 * 1024; // 10MB
+}
 
-if(this.files[0].size > maxSize){
+.card:hover{
 
-alert("File size must be less than 10 MB.");
+transform:translateY(-3px);
 
-this.value="";
+transition:.3s;
+
+box-shadow:0 20px 40px rgba(0,0,0,.12);
+
+}
+
+.badge{
+
+font-size:14px;
+
+padding:8px 14px;
+
+}
+
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+document.querySelector("input[type=file]").addEventListener("change",function(){
+
+if(this.files.length){
+
+alert("Selected File:\n\n"+this.files[0].name);
 
 }
 

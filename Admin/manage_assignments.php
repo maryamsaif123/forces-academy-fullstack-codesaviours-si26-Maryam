@@ -8,16 +8,42 @@ if (!isset($_SESSION['admin'])) {
 
 include("../config/database.php");
 
-// Get assignments with course name
-$query = mysqli_query($conn,"
-SELECT assignments.*, courses.course_name
+/* =======================
+   DASHBOARD STATISTICS
+======================= */
+
+$totalAssignments = mysqli_num_rows(mysqli_query($conn,"SELECT * FROM assignments"));
+$activeAssignments = mysqli_num_rows(mysqli_query($conn,"
+SELECT *
+FROM assignments
+WHERE deadline >= CURDATE()
+"));
+
+$expiredAssignments = mysqli_num_rows(mysqli_query($conn,"
+SELECT *
+FROM assignments
+WHERE deadline < CURDATE()
+"));
+
+$totalSubmissions = mysqli_num_rows(mysqli_query($conn,"
+SELECT *
+FROM submissions
+"));
+
+/* =======================
+   FETCH ASSIGNMENTS
+======================= */
+
+$result = mysqli_query($conn,"
+SELECT
+assignments.*,
+courses.course_name
 FROM assignments
 LEFT JOIN courses
-ON assignments.course_id = courses.id
+ON assignments.course_id=courses.id
 ORDER BY assignments.id DESC
 ");
 
-$totalAssignments = mysqli_num_rows($query);
 ?>
 
 <!DOCTYPE html>
@@ -27,194 +53,211 @@ $totalAssignments = mysqli_num_rows($query);
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport"
+content="width=device-width, initial-scale=1">
 
-<title>Manage Assignments</title>
+<title>
+
+Manage Assignments
+
+</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet"
+href="dashboard.css">
 
 <style>
 
 .page-header{
+
 background:linear-gradient(135deg,#16a34a,#22c55e);
+
 padding:35px;
+
 border-radius:20px;
+
 color:white;
-display:flex;
-justify-content:space-between;
-align-items:center;
+
 margin-bottom:30px;
-box-shadow:0 10px 25px rgba(0,0,0,.15);
+
+box-shadow:0 15px 35px rgba(0,0,0,.15);
+
 }
 
-.stats-card{
-background:white;
-border-radius:20px;
-padding:25px;
-box-shadow:0 10px 25px rgba(0,0,0,.08);
-margin-bottom:30px;
-}
+.summary-card{
 
-.stats-card h2{
-font-size:42px;
-font-weight:bold;
-color:#198754;
-}
-
-.assignment-card{
 border:none;
+
 border-radius:20px;
-box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+padding:25px;
+
+color:white;
+
 transition:.3s;
-margin-bottom:25px;
+
+box-shadow:0 10px 25px rgba(0,0,0,.12);
+
 }
 
-.assignment-card:hover{
+.summary-card:hover{
+
 transform:translateY(-8px);
-}
-
-.assignment-icon{
-font-size:55px;
-color:#198754;
-
-.assignment-card{
-
-overflow:hidden;
 
 }
 
-.assignment-card h4{
+.blue{
 
-font-weight:700;
-
-color:#222;
+background:linear-gradient(135deg,#2563eb,#1d4ed8);
 
 }
 
-.assignment-card p{
+.green{
 
-min-height:70px;
-
-}
-
-.assignment-card .btn{
-
-border-radius:12px;
-
-font-weight:600;
+background:linear-gradient(135deg,#16a34a,#15803d);
 
 }
 
-.assignment-card .btn:hover{
+.orange{
 
-transform:translateY(-2px);
-
-transition:.3s;
+background:linear-gradient(135deg,#ea580c,#fb923c);
 
 }
 
-.assignment-card .badge{
+.purple{
 
-font-size:13px;
-
-padding:8px 12px;
+background:linear-gradient(135deg,#7c3aed,#9333ea);
 
 }
 
-.assignment-card:hover{
+.summary-card i{
 
-box-shadow:0 20px 40px rgba(0,0,0,.15);
+font-size:50px;
 
-}
-
-/* Search Box */
-
-#search{
-
-height:55px;
-
-border-radius:15px;
-
-border:2px solid #198754;
+opacity:.8;
 
 }
 
-#search:focus{
+.summary-card h2{
 
-border-color:#16a34a;
+font-size:35px;
 
-box-shadow:0 0 10px rgba(22,163,74,.3);
+font-weight:bold;
 
-}
-
-/* Buttons */
-
-.btn{
-
-border-radius:12px;
-
-font-weight:600;
-
-transition:.3s;
-
-}
-
-.btn:hover{
-
-transform:translateY(-2px);
-
-}
-
-/* Assignment Cards */
-
-.assignment-card{
-
-overflow:hidden;
-
-transition:.3s;
-
-}
-
-.assignment-card:hover{
-
-box-shadow:0 20px 40px rgba(0,0,0,.15);
-
-}
-
-/* Responsive */
-
-@media(max-width:768px){
-
-.page-header{
-
-flex-direction:column;
-
-text-align:center;
-
-}
-
-.page-header .btn{
-
-margin-top:20px;
-
-}
-
-.stats-card{
-
-margin-bottom:20px;
-
-}
-
-}
 }
 
 </style>
 
 </head>
+<!-- Chart.js -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+/* ===========================
+   LIVE SEARCH
+=========================== */
+
+document.getElementById("searchInput").addEventListener("keyup",function(){
+
+let value=this.value.toLowerCase();
+
+let rows=document.querySelectorAll("#assignmentTable tbody tr");
+
+rows.forEach(function(row){
+
+row.style.display=row.innerText.toLowerCase().includes(value)
+
+? ""
+
+: "none";
+
+});
+
+});
+
+
+/* ===========================
+   ANALYTICS CHART
+=========================== */
+
+const ctx=document.getElementById("assignmentChart");
+
+if(ctx){
+
+new Chart(ctx,{
+
+type:'bar',
+
+data:{
+
+labels:['Active','Expired','Submissions'],
+
+datasets:[{
+
+label:'Assignments',
+
+data:[
+
+<?php echo $activeAssignments; ?>,
+
+<?php echo $expiredAssignments; ?>,
+
+<?php echo $totalSubmissions; ?>
+
+],
+
+backgroundColor:[
+
+'#16a34a',
+
+'#ef4444',
+
+'#2563eb'
+
+],
+
+borderRadius:8
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+display:false
+
+}
+
+},
+
+scales:{
+
+y:{
+
+beginAtZero:true
+
+}
+
+}
+
+}
+
+});
+
+}
+
+</script>
 
 <body>
 
@@ -228,23 +271,33 @@ margin-bottom:20px;
 
 <div class="page-header">
 
+<div class="d-flex justify-content-between align-items-center">
+
 <div>
 
 <h2>
 
-<i class="fas fa-tasks"></i>
+<i class="fas fa-book-open"></i>
 
 Manage Assignments
 
 </h2>
 
-<p>Create and manage all assignments.</p>
+<p>
+
+Create, Edit and Manage Student Assignments
+
+</p>
 
 </div>
 
-<a href="add_assignment.php" class="btn btn-light btn-lg">
+<div>
 
-<i class="fas fa-plus"></i>
+<a href="add_assignment.php"
+
+class="btn btn-light btn-lg">
+
+<i class="fas fa-plus-circle"></i>
 
 Add Assignment
 
@@ -252,106 +305,300 @@ Add Assignment
 
 </div>
 
-<div class="stats-card">
-
-<div class="d-flex justify-content-between align-items-center">
-
-<div>
-
-<h5>Total Assignments</h5>
-
-<h2><?php echo $totalAssignments; ?></h2>
-
-</div>
-
-<i class="fas fa-file-alt fa-4x text-success"></i>
-
 </div>
 
 </div>
 
-<div class="row">
+<!-- Statistics -->
 
-<?php
+<div class="row mb-4">
 
-while($row=mysqli_fetch_assoc($query))
-{
+<div class="col-lg-3">
 
-?>
-
-<div class="col-lg-6">
-
-<div class="card assignment-card">
-
-<div class="card-body">
+<div class="summary-card blue">
 
 <div class="d-flex justify-content-between">
 
 <div>
 
-<i class="fas fa-book assignment-icon"></i>
+<h6>Total Assignments</h6>
+
+<h2>
+
+<?php echo $totalAssignments; ?>
+
+</h2>
 
 </div>
 
-<span class="badge bg-success">
-
-<?php echo date("d M Y",strtotime($row['due_date'])); ?>
-
-</span>
+<i class="fas fa-book"></i>
 
 </div>
 
-<hr>
+</div>
 
-<h4 class="fw-bold mt-3">
+</div>
 
-<?php echo htmlspecialchars($row['title']); ?>
+<div class="col-lg-3">
+
+<div class="summary-card green">
+
+<div class="d-flex justify-content-between">
+
+<div>
+
+<h6>Active</h6>
+
+<h2>
+
+<?php echo $activeAssignments; ?>
+
+</h2>
+
+</div>
+
+<i class="fas fa-check-circle"></i>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="summary-card orange">
+
+<div class="d-flex justify-content-between">
+
+<div>
+
+<h6>Expired</h6>
+
+<h2>
+
+<?php echo $expiredAssignments; ?>
+
+</h2>
+
+</div>
+
+<i class="fas fa-clock"></i>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3">
+
+<div class="summary-card purple">
+
+<div class="d-flex justify-content-between">
+
+<div>
+
+<h6>Submissions</h6>
+
+<h2>
+
+<?php echo $totalSubmissions; ?>
+
+</h2>
+
+</div>
+
+<i class="fas fa-upload"></i>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Search -->
+
+<div class="card shadow-lg border-0 rounded-4 mb-4">
+
+<div class="card-body">
+
+<div class="row">
+
+<div class="col-md-8">
+
+<input
+type="text"
+id="searchInput"
+class="form-control form-control-lg"
+placeholder="Search Assignment, Course or Due Date">
+
+</div>
+
+<div class="col-md-4 text-end">
+
+<a href="add_assignment.php"
+
+class="btn btn-success btn-lg">
+
+<i class="fas fa-plus"></i>
+
+New Assignment
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<!-- Assignments Table -->
+
+<div class="card border-0 shadow-lg rounded-4">
+
+<div class="card-header bg-white border-0 d-flex justify-content-between align-items-center">
+
+<h4 class="fw-bold">
+
+<i class="fas fa-book-open text-success"></i>
+
+All Assignments
 
 </h4>
 
-<p class="text-muted">
+<span class="badge bg-success fs-6">
 
-<?php echo htmlspecialchars($row['description']); ?>
-
-</p>
-
-<div class="mb-3">
-
-<span class="badge bg-primary">
-
-<i class="fas fa-book-open"></i>
-
-<?php echo htmlspecialchars($row['course_name']); ?>
+<?php echo $totalAssignments; ?> Assignments
 
 </span>
 
 </div>
 
-<div class="row text-center mb-3">
+<div class="card-body">
 
-<div class="col-6">
+<div class="table-responsive">
 
-<h6 class="text-success">
+<table class="table table-hover align-middle" id="assignmentTable">
 
-Due Date
+<thead class="table-success">
+
+<tr>
+
+<th>ID</th>
+
+<th>Assignment</th>
+
+<th>Course</th>
+
+<th>Due Date</th>
+
+<th>Status</th>
+
+<th>Submissions</th>
+
+<th width="250">Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<?php
+
+if(mysqli_num_rows($result)>0){
+
+while($row=mysqli_fetch_assoc($result)){
+
+/* Count Submissions */
+
+$assignment_id=$row['id'];
+
+$submission=mysqli_query($conn,"
+SELECT COUNT(*) AS total
+FROM submissions
+WHERE assignment_id='$assignment_id'
+");
+
+$total=mysqli_fetch_assoc($submission);
+
+/* Status */
+
+$status = (strtotime($row['deadline']) >= strtotime(date("Y-m-d")))
+? "Active"
+: "Expired";
+
+?> 
+<tr>
+
+<td>
+
+<strong>
+
+<?php echo $row['id']; ?>
+
+</strong>
+
+</td>
+
+<td>
+
+<div class="d-flex align-items-center">
+
+<img
+src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png"
+width="55"
+height="55"
+class="rounded-circle border border-3 border-success me-3">
+
+<div>
+
+<h6 class="mb-1">
+
+<?php echo $row['title']; ?>
 
 </h6>
 
-<p class="mb-0">
+<small class="text-muted">
 
-<?php echo date("d M Y",strtotime($row['due_date'])); ?>
+<?php echo substr($row['description'],0,60); ?>...
 
-</p>
+</small>
 
 </div>
 
-<div class="col-6">
+</div>
 
-<h6 class="text-primary">
+</td>
 
-Status
+<td>
 
-</h6>
+<span class="badge bg-primary">
+
+<?php echo $row['course_name']; ?>
+
+</span>
+
+</td>
+
+<td>
+
+<i class="fas fa-calendar text-success"></i>
+
+
+</td>
+
+<td>
+
+<?php
+
+if($status=="Active"){
+
+?>
 
 <span class="badge bg-success">
 
@@ -359,47 +606,17 @@ Active
 
 </span>
 
-</div>
+<?php
 
-</div>
+}else{
 
-<div class="d-grid gap-2">
+?>
 
-<a href="view_assignment.php?id=<?php echo $row['id']; ?>" class="btn btn-info">
+<span class="badge bg-danger">
 
-<i class="fas fa-eye"></i>
+Expired
 
-View Assignment
-
-</a>
-
-<a href="edit_assignment.php?id=<?php echo $row['id']; ?>" class="btn btn-warning">
-
-<i class="fas fa-edit"></i>
-
-Edit Assignment
-
-</a>
-
-<a href="delete_assignment.php?id=<?php echo $row['id']; ?>"
-
-class="btn btn-danger"
-
-onclick="return confirm('Delete this assignment?')">
-
-<i class="fas fa-trash"></i>
-
-Delete Assignment
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
+</span>
 
 <?php
 
@@ -407,98 +624,181 @@ Delete Assignment
 
 ?>
 
-</div>
+</td>
 
-<div class="card border-0 shadow-lg rounded-4 mt-4">
+<td>
 
-<div class="card-body">
+<span class="badge bg-info">
 
-<input
+<?php echo $total['total']; ?>
 
-type="text"
+Submitted
 
-id="search"
+</span>
 
-class="form-control form-control-lg"
+</td>
 
-placeholder="🔍 Search Assignment">
+<td>
 
-</div>
+<a href="view_assignment.php?id=<?php echo $row['id']; ?>"
+class="btn btn-info btn-sm">
 
-</div>
+<i class="fas fa-eye"></i>
 
-</div>
+<a href="edit_assignment.php?id=<?php echo $row['id']; ?>"
 
-<?php include("footer.php"); ?>
+class="btn btn-warning btn-sm">
 
-</div>
+<i class="fas fa-edit"></i>
 
-<script>
+Edit
 
-// ==========================
-// Live Search
-// ==========================
+</a>
 
-document.getElementById("search").addEventListener("keyup", function(){
+<a href="manage_submissions.php?id=<?php echo $row['id']; ?>"
+class="btn btn-warning btn-sm">
 
-let value=this.value.toLowerCase();
+<i class="fas fa-upload"></i>
 
-let cards=document.querySelectorAll(".assignment-card");
+<a href="delete_assignment.php?id=<?php echo $row['id']; ?>"
 
-cards.forEach(function(card){
+class="btn btn-danger btn-sm"
 
-card.style.display=card.innerText.toLowerCase().includes(value)
+onclick="return confirm('Are you sure you want to delete this assignment?')">
 
-? ""
+<i class="fas fa-trash"></i>
 
-: "none";
+Delete
 
-});
+</a>
+</td>
 
-});
+</tr>
 
-// ==========================
-// Card Hover Animation
-// ==========================
-
-const assignmentCards=document.querySelectorAll(".assignment-card");
-
-assignmentCards.forEach(function(card){
-
-card.addEventListener("mouseenter",function(){
-
-this.style.transform="translateY(-8px) scale(1.02)";
-
-});
-
-card.addEventListener("mouseleave",function(){
-
-this.style.transform="translateY(0px)";
-
-});
-
-});
-
-// ==========================
-// Delete Confirmation
-// ==========================
-
-document.querySelectorAll(".btn-danger").forEach(function(btn){
-
-btn.addEventListener("click",function(e){
-
-if(!confirm("Are you sure you want to delete this assignment?")){
-
-e.preventDefault();
+<?php
 
 }
 
-});
+}else{
 
-});
+?>
 
-</script>
+<tr>
 
-</body>
+<td colspan="7">
 
-</html>
+<div class="text-center py-5">
+
+<img
+src="https://cdn-icons-png.flaticon.com/512/4076/4076549.png"
+width="120"
+class="mb-4">
+
+<h3>
+
+No Assignments Found
+
+</h3>
+
+<p class="text-muted">
+
+Create your first assignment to get started.
+
+</p>
+
+<a href="add_assignment.php"
+class="btn btn-success btn-lg">
+
+<i class="fas fa-plus-circle"></i>
+
+Create Assignment
+
+</a>
+
+</div>
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+?>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="row mb-4">
+
+<div class="col-lg-8">
+
+<div class="card border-0 shadow-lg rounded-4">
+
+<div class="card-header bg-white border-0">
+
+<h4>
+
+<i class="fas fa-chart-bar text-success"></i>
+
+Assignment Analytics
+
+</h4>
+
+</div>
+
+<div class="card-body">
+
+<canvas id="assignmentChart" height="120"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="card border-0 shadow-lg rounded-4">
+
+<div class="card-body text-center">
+
+<i class="fas fa-tasks fa-4x text-success mb-3"></i>
+
+<h2>
+
+<?php echo $totalAssignments; ?>
+
+</h2>
+
+<p class="text-muted">
+
+Total Assignments
+
+</p>
+
+<hr>
+
+<h5>
+
+<?php echo $totalSubmissions; ?>
+
+Submissions Received
+
+</h5>
+
+</div>
+
+</div>
+
+</div>
+
+</div>

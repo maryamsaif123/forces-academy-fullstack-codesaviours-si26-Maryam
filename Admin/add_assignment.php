@@ -20,9 +20,10 @@ $course_id = $_POST['course_id'];
 
 $due_date = $_POST['due_date'];
 
-$sql="INSERT INTO assignments(title,description,course_id,due_date)
-VALUES('$title','$description','$course_id','$due_date')";
+$deadline = $_POST['deadline'];
 
+$sql="INSERT INTO assignments(title,description,course_id,deadline)
+VALUES('$title','$description','$course_id','$deadline')";
 if(mysqli_query($conn,$sql)){
 
 $message="<div class='alert alert-success'>
