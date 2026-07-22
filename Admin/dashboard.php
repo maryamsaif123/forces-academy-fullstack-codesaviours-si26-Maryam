@@ -131,7 +131,6 @@ once:true
 
 });
 
-// Live Date & Time
 
 function updateClock(){
 
@@ -738,7 +737,7 @@ while($assignment=mysqli_fetch_assoc($assignments))
 
 Due:
 
-<?php echo date("d M Y",strtotime($assignment['due_date'])); ?>
+<?php echo date("d M Y",strtotime($assignment['deadline'])); ?>
 
 </small>
 
