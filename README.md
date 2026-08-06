@@ -18,12 +18,15 @@ Forces Academy LMS is designed to simplify student and course management through
 ### 👨‍💼 Admin Panel
 - Secure Admin Login
 - Dashboard with statistics
-- Add Students
-- Edit Student Details
-- Delete Students
-- View Student List
+- Add/Edit/Delete/View Student Details
 - Manage Courses
 - Manage Notices
+- Manage Timetable
+- Manage Teachers
+- Manage Assignmets
+- Manage Results
+- Manage Settings
+- Manage Reports
 - Responsive Sidebar & Navbar
 - Secure Logout
 
@@ -34,6 +37,8 @@ Forces Academy LMS is designed to simplify student and course management through
 - Personalized Dashboard
 - Profile Information
 - Course Overview
+- Timetable overview
+- Assignments module
 - Notice Board
 - Dashboard Statistics
 - Responsive User Interface
@@ -56,50 +61,129 @@ Forces Academy LMS is designed to simplify student and course management through
 
 ## 📂 Project Structure
 
-```
+
 Forces-Academy-LMS/
 │
 ├── admin/
-│   ├── dashboard.php
-│   ├── login.php
-│   ├── logout.php
-│   ├── students.php
-│   ├── add_student.php
-│   ├── edit_student.php
-│   ├── delete_student.php
-│   ├── courses.php
-│   ├── notices.php
+│ │
+│ ├── dashboard.php
+│ ├── login.php
+│ ├── logout.php
+│ │
+│ ├── students.php
+│ ├── add_student.php
+│ ├── edit_student.php
+│ ├── delete_student.php
+│ │
+│ ├── courses.php
+│ ├── add_course.php
+│ ├── edit_course.php
+│ ├── delete_course.php
+│ │
+│ ├── assignments.php
+│ ├── add_assignment.php
+│ ├── edit_assignment.php
+│ ├── delete_assignment.php
+│ │
+│ ├── submissions.php
+│ ├── view_submission.php
+│ ├── grade_submission.php
+│ │
+│ ├── notices.php
+│ ├── add_notice.php
+│ ├── edit_notice.php
+│ ├── delete_notice.php
+│ │
+│ └── includes/
+│ ├── sidebar.php
+│ ├── navbar.php
+│ └── footer.php
+│
 │
 ├── student/
-│   ├── dashboard.php
-│   ├── login.php
-│   ├── register.php
-│   ├── logout.php
-│   ├── profile.php
-│   ├── courses.php
-│   ├── notices.php
+│ │
+│ ├── dashboard.php
+│ ├── login.php
+│ ├── register.php
+│ ├── logout.php
+│ │
+│ ├── profile.php
+│ ├── edit_profile.php
+│ │
+│ ├── courses.php
+│ ├── course_details.php
+│ │
+│ ├── assignments.php
+│ ├── submit_assignment.php
+│ ├── my_submissions.php
+│ │
+│ ├── notices.php
+│ │
+│ └── includes/
+│ ├── sidebar.php
+│ ├── navbar.php
+│ └── footer.php
+│
 │
 ├── config/
-│   └── database.php
+│ │
+│ └── database.php
+│
 │
 ├── assets/
-│   ├── css/
-│  
+│ │
+│ ├── css/
+│ │ ├── style.css
+│ │ ├── dashboard.css
+│ │ ├── admin.css
+│ │ └── student.css
+│ │
+│ ├── js/
+│ │ ├── script.js
+│ │ └── dashboard.js
+│ │
+│ ├── images/
+│ │ ├── logo.png
+│ │ ├── admin-avatar.png
+│ │ ├── student-avatar.png
+│ │ └── icons/
+│ │
+│ └── uploads/
+│ │
+│ ├── assignments/
+│ ├── submissions/
+│ ├── profile_images/
+│ └── course_files/
+│
+│
 ├── database/
-│   
-└── README.md
+│ │
+│ └── forces_academy.sql
+│
+│
+├── includes/
+│ │
+│ ├── auth.php
+│ ├── session.php
+│ └── functions.php
+│
+│
+├── index.php
+├── about.php
+├── contact.php
+├── login.php
+├── register.php
+├── logout.php
+│
+├── .gitignore
+├── README.md
 
 
 ## 🚀 Future Improvements
 
-- Assignment Management
-- Online Quiz System
+=- Online Quiz System
 - Attendance Management
-- Result Management
 - Fee Management
-- Student Profile Picture Upload
-- Email Notifications
-- Dark Mode
 - Chat System
 - Certificate Generation
 
