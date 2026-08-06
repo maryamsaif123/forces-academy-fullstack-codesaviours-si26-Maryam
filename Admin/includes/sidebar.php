@@ -20,8 +20,6 @@ $current = basename($_SERVER['PHP_SELF']);
 
     </div>
 
-
-
     <!-- Navigation -->
 
     <ul class="sidebar-menu">
@@ -37,8 +35,6 @@ $current = basename($_SERVER['PHP_SELF']);
             </a>
 
         </li>
-
-
 
         <li class="<?= ($current=="manage_students.php")?'active':''; ?>">
 
@@ -122,8 +118,6 @@ $current = basename($_SERVER['PHP_SELF']);
 
         </li>
 
-
-
         <li class="<?= ($current=="manage_results.php")?'active':''; ?>">
 
             <a href="manage_results.php">
@@ -133,11 +127,15 @@ $current = basename($_SERVER['PHP_SELF']);
                 Results
 
             </a>
-
         </li>
 
+    <li class="<?= ($current=="timetable.php")?'active':''; ?>">
 
-
+        <a href="timetable.php">
+            <i class="fas fa-calendar-alt"></i>
+            Timetable
+        </a>
+    </li>
         <li class="<?= ($current=="reports.php")?'active':''; ?>">
 
             <a href="reports.php">
@@ -145,29 +143,16 @@ $current = basename($_SERVER['PHP_SELF']);
                 <i class="fas fa-chart-pie"></i>
 
                 Reports
-
             </a>
-
-        </li>
-
-
-
+</li>
         <li class="<?= ($current=="settings.php")?'active':''; ?>">
 
             <a href="settings.php">
 
                 <i class="fas fa-cog"></i>
-
                 Settings
-
             </a>
-
         </li>
-
-    </ul>
-
-
-
     <!-- Bottom Card -->
 
     <div class="academy-card">
@@ -177,14 +162,10 @@ $current = basename($_SERVER['PHP_SELF']);
         <h4>Forces Academy</h4>
 
         <p>
-
             Excellence in Education
 
         </p>
-
     </div>
-
-
 
     <!-- Logout -->
 
@@ -193,6 +174,14 @@ $current = basename($_SERVER['PHP_SELF']);
         <a href="logout.php" class="logout-btn">
 
             <i class="fas fa-sign-out-alt"></i>
+
+            Logout
+
+        </a>
+
+    </div>
+
+</div>
 
             Logout
 

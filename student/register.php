@@ -7,22 +7,28 @@ $error = "";
 
 if(isset($_POST['register'])){
 
-    $full_name = trim($_POST['full_name']);
-    $email = trim($_POST['email']);
-    $roll_number = trim($_POST['roll_number']);
-    $class = trim($_POST['class']);
-    $gender = $_POST['gender'];
-    $phone = trim($_POST['phone']);
-    $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
-
+$full_name = trim($_POST['full_name']);
+$email = trim($_POST['email']);
+$education_level = trim($_POST['education_level']);
+$class = trim($_POST['class']);
+$gender = $_POST['gender'];
+$phone = trim($_POST['phone']);
+$password = $_POST['password'];
+$confirm_password = $_POST['confirm_password'];
     /*=========================================
         VALIDATION
     =========================================*/
 
-    if(empty($full_name) || empty($email) || empty($roll_number) ||
-       empty($class) || empty($gender) || empty($phone) ||
-       empty($password) || empty($confirm_password)){
+   if(
+empty($full_name) ||
+empty($email) ||
+empty($education_level) ||
+empty($class) ||
+empty($gender) ||
+empty($phone) ||
+empty($password) ||
+empty($confirm_password)
+){
 
         $error = "All fields are required.";
 
@@ -47,18 +53,17 @@ if(isset($_POST['register'])){
         =========================================*/
 
         $check = mysqli_prepare(
-            $conn,
-            "SELECT id
-             FROM students
-             WHERE email=? OR roll_number=?"
-        );
+$conn,
+"SELECT id
+FROM students
+WHERE email=?"
+);
 
-        mysqli_stmt_bind_param(
-            $check,
-            "ss",
-            $email,
-            $roll_number
-        );
+mysqli_stmt_bind_param(
+$check,
+"s",
+$email
+);
 
         mysqli_stmt_execute($check);
 
@@ -66,8 +71,7 @@ if(isset($_POST['register'])){
 
         if(mysqli_stmt_num_rows($check)>0){
 
-            $error="Email or Roll Number already exists.";
-
+$error="Email already exists.";
         }
 
         else{
@@ -128,39 +132,37 @@ if(!move_uploaded_file($_FILES['photo']['tmp_name'], $upload_dir . $photo)){
                 "INSERT INTO students
 
                 (
-                full_name,
-                email,
-                roll_number,
-                class,
-                gender,
-                phone,
-                password,
-                photo
-                )
-
+full_name,
+email,
+education_level,
+class,
+gender,
+phone,
+password,
+photo
+)
                 VALUES
 
                 (?,?,?,?,?,?,?,?)"
 
             );
 
-            mysqli_stmt_bind_param(
+mysqli_stmt_bind_param(
 
-                $insert,
+$insert,
 
-                "ssssssss",
+"ssssssss",
 
-                $full_name,
-                $email,
-                $roll_number,
-                $class,
-                $gender,
-                $phone,
-                $hashedPassword,
-                $photo
+$full_name,
+$email,
+$education_level,
+$class,
+$gender,
+$phone,
+$hashedPassword,
+$photo
 
-            );
-
+);
             if(mysqli_stmt_execute($insert)){
 
     $_SESSION['success'] = "Registration successful. Please login.";
@@ -375,7 +377,7 @@ required>
 
 <label class="form-label">
 
-Roll Number
+Education Level
 
 </label>
 
@@ -383,31 +385,33 @@ Roll Number
 
 <span class="input-group-text">
 
-<i class="fas fa-id-card"></i>
+<i class="fas fa-school"></i>
 
 </span>
 
-<input
-
-type="text"
-
-name="roll_number"
-
-class="form-control"
-
-placeholder="Enter roll number"
-
+<select
+name="education_level"
+class="form-select"
 required>
 
-</div>
+<option value="">Select Level</option>
+
+<option value="School">School</option>
+
+<option value="College">College</option>
+
+<option value="University">University</option>
+
+</select>
 
 </div>
 
+</div>
 <div class="col-md-6 mb-3">
 
 <label class="form-label">
 
-Class
+Class / Semester
 
 </label>
 
@@ -419,22 +423,84 @@ Class
 
 </span>
 
-<input
-
-type="text"
-
+<select
 name="class"
-
-class="form-control"
-
-placeholder="Example: BSIT 6th Semester"
-
+class="form-select"
 required>
 
-</div>
+<option value="">Select Class / Semester</option>
+
+<!-- School -->
+
+<optgroup label="School">
+
+<option>Class 1</option>
+<option>Class 2</option>
+<option>Class 3</option>
+<option>Class 4</option>
+<option>Class 5</option>
+<option>Class 6</option>
+<option>Class 7</option>
+<option>Class 8</option>
+<option>Class 9</option>
+<option>Class 10</option>
+<option>Class 11</option>
+<option>Class 12</option>
+
+</optgroup>
+
+<!-- College -->
+
+<optgroup label="College">
+
+<option>1st Year</option>
+<option>2nd Year</option>
+
+</optgroup>
+
+<!-- University -->
+
+<optgroup label="University">
+
+<option>BSIT Semester 1</option>
+<option>BSIT Semester 2</option>
+<option>BSIT Semester 3</option>
+<option>BSIT Semester 4</option>
+<option>BSIT Semester 5</option>
+<option>BSIT Semester 6</option>
+<option>BSIT Semester 7</option>
+<option>BSIT Semester 8</option>
+
+<option>BSCS Semester 1</option>
+<option>BSCS Semester 2</option>
+<option>BSCS Semester 3</option>
+<option>BSCS Semester 4</option>
+<option>BSCS Semester 5</option>
+<option>BSCS Semester 6</option>
+<option>BSCS Semester 7</option>
+<option>BSCS Semester 8</option>
+
+<option>BBA Semester 1</option>
+<option>BBA Semester 2</option>
+<option>BBA Semester 3</option>
+<option>BBA Semester 4</option>
+<option>BBA Semester 5</option>
+<option>BBA Semester 6</option>
+<option>BBA Semester 7</option>
+<option>BBA Semester 8</option>
+
+<option>ADP Semester 1</option>
+<option>ADP Semester 2</option>
+<option>ADP Semester 3</option>
+<option>ADP Semester 4</option>
+
+</optgroup>
+
+</select>
 
 </div>
 
+</div>
 <div class="col-md-6 mb-3">
 
 <label class="form-label">

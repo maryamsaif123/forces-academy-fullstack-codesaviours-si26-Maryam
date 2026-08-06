@@ -613,6 +613,9 @@ left:0;
 </head>
 
 <body>
+<?php include "sidebar.php"; ?>
+
+<?php include "navbar.php"; ?>
  
 <div class="dashboard-container">
     

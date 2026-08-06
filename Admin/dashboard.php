@@ -322,7 +322,7 @@ transform:rotate(360deg);
 
     <div class="logo-area">
 
-        <img src="https://ui-avatars.com/api/?name=Admin&background=0D6EFD&color=fff">">
+        <img src="assets/images/logo.png" class="logo" alt="Logo">
 
         <h3>Forces Academy</h3>
 
@@ -374,30 +374,38 @@ transform:rotate(360deg);
                 Submissions
             </a>
         </li>
-
         <li>
+    <a href="manage_results.php">
+        <i class="fas fa-chart-line"></i>
+        Results
+    </a>
+</li>
+<li>
             <a href="manage_notices.php">
                 <i class="fas fa-bullhorn"></i>
                 Notices
             </a>
         </li>
-
+        <li>
+    <a href="timetable.php">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Timetable</span>
+    </a>
+</li>
+</li>
         <li>
             <a href="reports.php">
                 <i class="fas fa-chart-bar"></i>
                 Reports
             </a>
         </li>
-
         <li>
             <a href="settings.php">
                 <i class="fas fa-cog"></i>
                 Settings
             </a>
         </li>
-
     </ul>
-
     <div class="logout-area">
 
         <a href="logout.php" class="btn btn-danger w-100">
@@ -405,7 +413,6 @@ transform:rotate(360deg);
             <i class="fas fa-sign-out-alt"></i>
 
             Logout
-
         </a>
 
     </div>
@@ -419,9 +426,6 @@ transform:rotate(360deg);
 ================================ -->
 
 <div class="main-content">
-
-
-
 
 <!-- ==============================
         TOP NAVBAR
@@ -798,6 +802,13 @@ class="img-fluid banner-image">
     </div>
 
 </div>
+<a href="timetable.php" class="btn btn-primary">
+
+    <i class="fas fa-calendar-alt me-2"></i>
+
+    Timetable
+
+</a>
 
 
 
@@ -823,8 +834,6 @@ Quick Actions
 
 <div class="row g-4">
 
-
-
 <div class="col-lg-2 col-md-4 col-6">
 
 <a href="add_student.php" class="quick-box">
@@ -836,7 +845,6 @@ Quick Actions
 </a>
 
 </div>
-
 
 
 <div class="col-lg-2 col-md-4 col-6">
@@ -949,8 +957,6 @@ Student Registration Overview
 
 </div>
 
-
-
 <div class="col-lg-4">
 
 <div class="card shadow border-0">
@@ -976,6 +982,7 @@ System Statistics
 </div>
 
 </div>
+s
 <!-- ==========================================
         RECENT NOTICES & RECENT ACTIVITIES
 ========================================== -->

@@ -155,106 +155,9 @@ box-shadow:0 18px 35px rgba(0,0,0,.15);
 </head>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-
-/* ==========================
-   LIVE SEARCH
-========================== */
-
-document.getElementById("searchInput").addEventListener("keyup", function(){
-
-let value=this.value.toLowerCase();
-
-let cards=document.querySelectorAll(".assignment-item");
-
-cards.forEach(function(card){
-
-card.style.display=card.innerText.toLowerCase().includes(value)
-
-? "block"
-
-: "none";
-
-});
-
-});
-
-
-/* ==========================
-   ASSIGNMENT ANALYTICS
-========================== */
-
-const assignmentChart=document.getElementById("assignmentChart");
-
-if(assignmentChart){
-
-new Chart(assignmentChart,{
-
-type:'doughnut',
-
-data:{
-
-labels:['Submitted','Pending'],
-
-datasets:[{
-
-data:[
-
-<?php echo $submittedAssignments; ?>,
-
-<?php echo $pendingAssignments; ?>
-
-],
-
-backgroundColor:[
-
-'#16a34a',
-
-'#f59e0b'
-
-],
-
-borderWidth:0
-
-}]
-
-},
-
-options:{
-
-responsive:true,
-
-plugins:{
-
-legend:{
-
-position:'bottom'
-
-}
-
-}
-
-}
-
-});
-
-}
-
-</script>
-
-</body>
-
-</html>
-
 <body>
 
-<?php include("sidebar.php"); ?>
-
 <div class="main-content">
-
-<?php include("navbar.php"); ?>
-
-<div class="container-fluid">
 
 <!-- Header -->
 
@@ -587,8 +490,15 @@ Assignment Progress
 
 <div class="card-body">
 
-<canvas id="assignmentChart" height="120"></canvas>
+<div class="card-body">
 
+<div style="height:300px; position:relative;">
+
+<canvas id="assignmentChart"></canvas>
+
+</div>
+
+</div>
 </div>
 
 </div>
@@ -648,3 +558,90 @@ Pending
 </div>
 
 </div>
+<script>
+
+/* ==========================
+   LIVE SEARCH
+========================== */
+
+document.getElementById("searchInput").addEventListener("keyup", function(){
+
+let value=this.value.toLowerCase();
+
+let cards=document.querySelectorAll(".assignment-item");
+
+cards.forEach(function(card){
+
+card.style.display=card.innerText.toLowerCase().includes(value)
+
+? "block"
+
+: "none";
+
+});
+
+});
+
+
+/* ==========================
+   ASSIGNMENT ANALYTICS
+========================== */
+
+const assignmentChart=document.getElementById("assignmentChart");
+
+if(assignmentChart){
+
+new Chart(assignmentChart,{
+
+type:'doughnut',
+
+data:{
+
+labels:['Submitted','Pending'],
+
+datasets:[{
+
+data:[
+
+<?php echo $submittedAssignments; ?>,
+
+<?php echo $pendingAssignments; ?>
+
+],
+
+backgroundColor:[
+
+'#16a34a',
+
+'#f59e0b'
+
+],
+
+borderWidth:0
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+position:'bottom'
+
+}
+
+}
+
+}
+
+});
+
+}
+
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

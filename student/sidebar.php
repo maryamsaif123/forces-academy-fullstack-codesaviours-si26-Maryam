@@ -31,7 +31,12 @@
                 Assignments
             </a>
         </li>
-
+<li>
+    <a href="timetable.php">
+        <i class="fas fa-calendar-alt"></i>
+        <span>Timetable</span>
+    </a>
+</li>
 
         <li>
             <a href="results.php">

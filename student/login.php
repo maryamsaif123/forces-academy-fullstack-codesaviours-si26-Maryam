@@ -244,12 +244,6 @@ Register Now
 </a>
 </p>
 
-
-<a href="../index.php">
-← Back to Home
-</a>
-
-
 </div>
 
 

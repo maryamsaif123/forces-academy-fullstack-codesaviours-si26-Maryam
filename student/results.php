@@ -10,492 +10,239 @@ include("../config/database.php");
 
 $student_id = $_SESSION['student_id'];
 
-$query = mysqli_query($conn,"
-SELECT
-submissions.*,
-assignments.title,
-courses.course_name
-FROM submissions
-INNER JOIN assignments
-ON submissions.assignment_id = assignments.id
-LEFT JOIN courses
-ON assignments.course_id = courses.id
-WHERE submissions.student_id='$student_id'
-AND submissions.status='graded'
-ORDER BY submissions.submitted_at DESC
-");
-
-$top = mysqli_query($conn,"
-SELECT
-    students.id,
-    students.full_name,
-    students.email,
-    ROUND(AVG(results.marks),2) AS average_marks
+// Student Information
+$studentQuery = mysqli_query($conn, "
+SELECT *
 FROM students
-LEFT JOIN results
-ON students.id = results.student_id
-GROUP BY students.id
-ORDER BY average_marks DESC
-LIMIT 5
+WHERE id='$student_id'
 ");
 
-$totalResults = mysqli_num_rows($query);
+$student = mysqli_fetch_assoc($studentQuery);
+
+// Student Results
+$resultQuery = mysqli_query($conn, "
+SELECT *
+FROM results
+WHERE student_id='$student_id'
+ORDER BY created_at DESC
+");
+
+$totalMarks = 0;
+$obtainedMarks = 0;
+$totalSubjects = 0;
 ?>
 
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <title>My Results</title>
 
-<meta charset="UTF-8">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 
-<title>My Results</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
-
-<link rel="stylesheet" href="dashboard.css">
-
-<style>
-
-.page-header{
-
-background:linear-gradient(135deg,#198754,#22c55e);
-
-padding:35px;
-
-border-radius:20px;
-
-display:flex;
-
-justify-content:space-between;
-
-align-items:center;
-
-color:white;
-
-margin-bottom:30px;
-
-}
-
-.result-card{
-
-border:none;
-
-border-radius:20px;
-
-box-shadow:0 10px 25px rgba(0,0,0,.1);
-
-transition:.3s;
-
-margin-bottom:25px;
-
-}
-
-.result-card:hover{
-
-transform:translateY(-6px);
-
-}
-
-.result-icon{
-
-font-size:55px;
-
-color:#198754;
-
-}
-.result-card{
-
-overflow:hidden;
-
-transition:.3s;
-
-}
-
-.result-card:hover{
-
-box-shadow:0 20px 40px rgba(0,0,0,.15);
-
-}
-
-.result-card h4{
-
-font-weight:700;
-
-}
-
-.result-icon{
-
-font-size:60px;
-
-color:#198754;
-
-margin-bottom:15px;
-
-}
-
-.badge{
-
-padding:8px 14px;
-
-font-size:13px;
-
-}
-
-.form-control{
-
-height:55px;
-
-border-radius:12px;
-
-}
-
-@media(max-width:768px){
-
-.page-header{
-
-flex-direction:column;
-
-text-align:center;
-
-}
-
-}
-
-</style>
-
+    <!-- Dashboard CSS -->
+    <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 
-<body>
+<body class="bg-light">
 
-<?php include("sidebar.php"); ?>
+<div class="container-fluid mt-4">
 
-<div class="main-content">
+<div class="card shadow border-0">
 
-<?php include("navbar.php"); ?>
+<div class="card-header bg-primary text-white">
 
-<div class="container-fluid">
-
-<div class="page-header">
-
-<div>
-
-<h2>
-
-<i class="fas fa-chart-line"></i>
-
-My Results
-
-</h2>
-
-<p>
-
-View your assignment grades and teacher feedback.
-
-</p>
+<h4><i class="fas fa-chart-line"></i> My Results</h4>
 
 </div>
-
-<div>
-
-<span class="badge bg-light text-success fs-5">
-
-<?php echo $totalResults; ?> Results
-
-</span>
-
-</div>
-
-</div>
-
-<div class="row">
-<?php
-
-$rank=1;
-
-while($student=mysqli_fetch_assoc($top))
-{
-
-$avg=$student['average_marks'];
-
-if($avg==""){
-
-$avg=0;
-
-}
-
-if($avg>=90){
-
-$grade="A+";
-
-$badge="🥇";
-
-$color="success";
-
-}elseif($avg>=80){
-
-$grade="A";
-
-$badge="🥈";
-
-$color="primary";
-
-}elseif($avg>=70){
-
-$grade="B";
-
-$badge="🥉";
-
-$color="warning";
-
-}else{
-
-$grade="C";
-
-$badge="🎓";
-
-$color="secondary";
-
-}
-
-?>
-
-<div class="student-rank-card">
-
-<div class="d-flex align-items-center">
-
-<img
-
-src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
-
-class="student-avatar">
-
-<div class="ms-3">
-
-<h5 class="mb-1">
-
-<?php echo $badge; ?>
-
-Rank #<?php echo $rank; ?>
-
-</h5>
-
-<h6 class="mb-0">
-
-<?php echo $student['full_name']; ?>
-
-</h6>
-
-<small>
-
-<?php echo $student['email']; ?>
-
-</small>
-
-</div>
-
-<div class="ms-auto text-end">
-
-<div class="badge bg-<?php echo $color; ?> fs-6">
-
-<?php echo $grade; ?>
-
-</div>
-
-<h4 class="mt-2">
-
-<?php echo $avg; ?>%
-
-</h4>
-
-</div>
-
-</div>
-
-</div>
-
-<?php
-
-$rank++;
-
-}
-
-?>
-
-<div class="col-lg-6">
-
-<div class="card result-card">
 
 <div class="card-body">
 
-<div class="d-flex justify-content-between">
+<table class="table table-bordered table-hover">
 
-<i class="fas fa-award result-icon"></i>
+<thead class="table-primary">
 
-<span class="badge bg-<?php echo $badge; ?> fs-6">
+<tr>
 
-<?php echo $grade; ?>
+<th>#</th>
 
-</span>
+<th>Subject</th>
 
-</div>
+<th>Marks</th>
 
-<hr>
+<th>Total</th>
 
-<h4 class="fw-bold">
+<th>Percentage</th>
 
-<?php echo htmlspecialchars($row['title']); ?>
+<th>Grade</th>
 
-</h4>
+<th>Exam Type</th>
 
-<p class="text-muted">
+<th>Remarks</th>
 
-Course:
+<th>Date</th>
 
-<strong>
+</tr>
 
-<?php echo htmlspecialchars($row['course_name']); ?>
+</thead>
 
-</strong>
-
-</p>
-
-<div class="row text-center">
-
-<div class="col-4">
-
-<h6>Marks</h6>
-
-<h3 class="text-success">
-
-<?php echo $row['marks']; ?>/100
-
-</h3>
-
-</div>
-
-<div class="col-4">
-
-<h6>Status</h6>
-
-<span class="badge bg-success">
-
-Graded
-
-</span>
-
-</div>
-
-<div class="col-4">
-
-<h6>Date</h6>
-
-<small>
-
-<?php echo date("d M Y",strtotime($row['submitted_at'])); ?>
-
-</small>
-
-</div>
-
-</div>
-
-<hr>
-
-<h6 class="text-success">
-
-Teacher Feedback
-
-</h6>
-
-<p>
-
-<?php echo nl2br(htmlspecialchars($row['feedback'])); ?>
-
-</p>
-
-</div>
-
-</div>
-
-</div>
+<tbody>
 
 <?php
 
+$count=1;
+
+while($row=mysqli_fetch_assoc($resultQuery)){
+
+$totalSubjects++;
+
+$totalMarks += $row['total_marks'];
+
+$obtainedMarks += $row['marks'];
+
+$percentage = ($row['marks']/$row['total_marks'])*100;
+
 ?>
 
+<tr>
+
+<td><?php echo $count++; ?></td>
+
+<td><?php echo $row['subject']; ?></td>
+
+<td><?php echo $row['marks']; ?></td>
+
+<td><?php echo $row['total_marks']; ?></td>
+
+<td><?php echo number_format($percentage,1); ?>%</td>
+
+<td>
+
+<span class="badge bg-success">
+
+<?php echo $row['grade']; ?>
+
+</span>
+
+</td>
+
+<td>
+
+<?php echo $row['exam_type']; ?>
+
+</td>
+
+<td>
+
+<?php echo $row['remarks']; ?>
+
+</td>
+
+<td>
+
+<?php echo date("d M Y",strtotime($row['created_at'])); ?>
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+if($totalSubjects==0){
+
+?>
+
+<tr>
+
+<td colspan="9" class="text-center text-danger">
+
+No Result Found
+
+</td>
+
+</tr>
+
+<?php } ?>
+
+</tbody>
+
+</table>
+
+<?php
+
+if($totalSubjects>0){
+
+$overall = ($obtainedMarks/$totalMarks)*100;
+
+?>
+
+<div class="row mt-4">
+
+<div class="col-md-4">
+
+<div class="card bg-primary text-white">
+
+<div class="card-body">
+
+<h6>Total Subjects</h6>
+
+<h2><?php echo $totalSubjects; ?></h2>
+
 </div>
 
-<?php include("footer.php"); ?>
+</div>
 
 </div>
 
-<script>
+<div class="col-md-4">
 
-// ==========================
-// Search Box
-// ==========================
+<div class="card bg-success text-white">
 
-const search=document.createElement("input");
+<div class="card-body">
 
-search.className="form-control form-control-lg mb-4";
+<h6>Total Marks</h6>
 
-search.placeholder="🔍 Search Results";
+<h2><?php echo $obtainedMarks." / ".$totalMarks; ?></h2>
 
-document.querySelector(".container-fluid").insertBefore(
+</div>
 
-search,
+</div>
 
-document.querySelector(".row")
+</div>
 
-);
+<div class="col-md-4">
 
-search.addEventListener("keyup",function(){
+<div class="card bg-warning text-dark">
 
-let value=this.value.toLowerCase();
+<div class="card-body">
 
-let cards=document.querySelectorAll(".result-card");
+<h6>Overall Percentage</h6>
 
-cards.forEach(function(card){
+<h2><?php echo number_format($overall,2); ?>%</h2>
 
-card.style.display=card.innerText.toLowerCase().includes(value)
+</div>
 
-? ""
+</div>
 
-: "none";
+</div>
 
-});
+</div>
 
-});
+<?php } ?>
 
-// ==========================
-// Hover Animation
-// ==========================
+</div>
 
-document.querySelectorAll(".result-card").forEach(function(card){
+</div>
 
-card.addEventListener("mouseenter",function(){
-
-this.style.transform="translateY(-8px)";
-
-this.style.transition=".3s";
-
-});
-
-card.addEventListener("mouseleave",function(){
-
-this.style.transform="translateY(0px)";
-
-});
-
-});
-
-</script>
+</div>
 
 </body>
 
 </html>
-
