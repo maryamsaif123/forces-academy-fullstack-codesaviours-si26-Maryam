@@ -1,87 +1,180 @@
 <?php
 session_start();
 
+if (!isset($_SESSION['admin_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
 include("../config/database.php");
 
-if(!isset($_GET['id'])){
+/*=========================================
+    CHECK ASSIGNMENT ID
+=========================================*/
+
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+
+    $_SESSION['error'] = "Invalid Assignment ID.";
+
     header("Location: manage_assignments.php");
     exit();
 }
 
 $id = (int)$_GET['id'];
 
-/* Fetch Assignment */
+/*=========================================
+    FETCH ASSIGNMENT
+=========================================*/
 
-$query = mysqli_query($conn,"
-SELECT * FROM assignments
-WHERE id='$id'
-");
+$stmt = mysqli_prepare(
+    $conn,
+    "SELECT * FROM assignments WHERE id=? LIMIT 1"
+);
 
-if(mysqli_num_rows($query)==0){
+mysqli_stmt_bind_param($stmt,"i",$id);
+
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+if(mysqli_num_rows($result)==0){
+
+    $_SESSION['error']="Assignment not found.";
+
     header("Location: manage_assignments.php");
     exit();
 }
 
-$assignment = mysqli_fetch_assoc($query);
+$assignment=mysqli_fetch_assoc($result);
 
-/* Fetch Courses */
+/*=========================================
+    UPDATE
+=========================================*/
 
-$courses = mysqli_query($conn,"
-SELECT *
-FROM courses
-ORDER BY course_name ASC
-");
+if(isset($_POST['update'])){
 
-/* Update Assignment */
+    $course_id=(int)$_POST['course_id'];
+    $title=trim($_POST['title']);
+    $description=trim($_POST['description']);
+    $deadline=$_POST['deadline'];
 
-if(isset($_POST['update_assignment'])){
+    if(
+        $course_id<=0 ||
+        empty($title) ||
+        empty($description) ||
+        empty($deadline)
+    ){
 
-    $title = mysqli_real_escape_string($conn,$_POST['title']);
+        $_SESSION['error']="Please fill all required fields.";
 
-    $description = mysqli_real_escape_string($conn,$_POST['description']);
+        header("Location: edit_assignment.php?id=".$id);
+        exit();
+    }
 
-    $course_id = $_POST['course_id'];
+    if($deadline < date("Y-m-d")){
 
-    $deadline = $_POST['deadline'];
+        $_SESSION['error']="Deadline cannot be in the past.";
 
-    $sql = "
-    UPDATE assignments
-    SET
+        header("Location: edit_assignment.php?id=".$id);
+        exit();
+    }
 
-    title='$title',
+    /* Duplicate Check */
 
-    description='$description',
+    $check=mysqli_prepare(
 
-    course_id='$course_id',
+        $conn,
 
-    deadline='$deadline'
+        "SELECT id
+         FROM assignments
+         WHERE title=?
+         AND course_id=?
+         AND id<>?"
 
-    WHERE id='$id'
-    ";
+    );
 
-    if(mysqli_query($conn,$sql)){
+    mysqli_stmt_bind_param(
 
-        header("Location: manage_assignments.php?updated=1");
+        $check,
 
+        "sii",
+
+        $title,
+
+        $course_id,
+
+        $id
+
+    );
+
+    mysqli_stmt_execute($check);
+
+    mysqli_stmt_store_result($check);
+
+    if(mysqli_stmt_num_rows($check)>0){
+
+        $_SESSION['error']="Assignment already exists.";
+
+        header("Location: edit_assignment.php?id=".$id);
+        exit();
+    }
+
+    /* Update */
+
+    $update=mysqli_prepare(
+
+        $conn,
+
+        "UPDATE assignments SET
+
+        course_id=?,
+        title=?,
+        description=?,
+        deadline=?
+
+        WHERE id=?"
+
+    );
+
+    mysqli_stmt_bind_param(
+
+        $update,
+
+        "isssi",
+
+        $course_id,
+        $title,
+        $description,
+        $deadline,
+        $id
+
+    );
+
+    if(mysqli_stmt_execute($update)){
+
+        $_SESSION['success']="Assignment updated successfully.";
+
+        header("Location: manage_assignments.php");
         exit();
 
     }else{
 
-        $error="Something went wrong.";
+        $_SESSION['error']="Database Error.";
 
     }
 
 }
-
 ?>
 
 <!DOCTYPE html>
-
-<html>
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1">
 
 <title>Edit Assignment</title>
 
@@ -89,50 +182,25 @@ if(isset($_POST['update_assignment'])){
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
 
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 
 body{
-
-background:#f5f7fb;
-
+background:#f4f7fb;
+font-family:'Poppins',sans-serif;
 }
 
 .card{
-
 border:none;
-
 border-radius:20px;
-
-box-shadow:0 15px 35px rgba(0,0,0,.1);
-
+box-shadow:0 15px 35px rgba(0,0,0,.08);
 }
 
-.header{
-
-background:linear-gradient(135deg,#16a34a,#22c55e);
-
-padding:30px;
-
-border-radius:20px;
-
+.card-header{
+background:linear-gradient(135deg,#0d6efd,#20c997);
 color:white;
-
-margin-bottom:30px;
-
-}
-
-.btn{
-
-border-radius:10px;
-
-}
-
-.form-control,
-
-.form-select{
-
-border-radius:10px;
-
+padding:22px;
 }
 
 </style>
@@ -143,95 +211,23 @@ border-radius:10px;
 
 <div class="container py-5">
 
-<div class="header">
+<div class="card">
 
-<div class="d-flex justify-content-between align-items-center">
+<div class="card-header">
 
-<h2>
+<h3>
 
-<i class="fas fa-edit"></i>
+<i class="fas fa-edit me-2"></i>
 
 Edit Assignment
 
-</h2>
-
-<a href="manage_assignments.php"
-
-class="btn btn-light">
-
-Back
-
-</a>
+</h3>
 
 </div>
 
-</div>
-
-<?php
-
-if(isset($error)){
-
-?>
-
-<div class="alert alert-danger">
-
-<?php echo $error; ?>
-
-</div>
-
-<?php
-
-}
-
-?>
-
-<div class="card">
-
-<div class="card-body p-4">
+<div class="card-body">
 
 <form method="POST">
-
-<div class="mb-3">
-
-<label class="form-label">
-
-Assignment Title
-
-</label>
-
-<input
-
-type="text"
-
-name="title"
-
-class="form-control"
-
-value="<?php echo htmlspecialchars($assignment['title']); ?>"
-
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label class="form-label">
-
-Description
-
-</label>
-
-<textarea
-
-name="description"
-
-class="form-control"
-
-rows="5"
-
-required><?php echo htmlspecialchars($assignment['description']); ?></textarea>
-
-</div>
 
 <div class="row">
 
@@ -244,42 +240,37 @@ Course
 </label>
 
 <select
-
 name="course_id"
-
 class="form-select"
-
 required>
 
 <?php
+
+$courses=mysqli_query(
+
+$conn,
+
+"SELECT id,course_name
+FROM courses
+ORDER BY course_name"
+
+);
 
 while($course=mysqli_fetch_assoc($courses)){
 
 ?>
 
 <option
-
 value="<?php echo $course['id']; ?>"
-
 <?php
-
-if($course['id']==$assignment['course_id'])
-
-echo "selected";
-
-?>
-
->
+if($course['id']==$assignment['course_id']) echo "selected";
+?>>
 
 <?php echo htmlspecialchars($course['course_name']); ?>
 
 </option>
 
-<?php
-
-}
-
-?>
+<?php } ?>
 
 </select>
 
@@ -307,33 +298,72 @@ required>
 
 </div>
 
+<div class="col-12 mb-3">
+
+<label class="form-label">
+
+Assignment Title
+
+</label>
+
+<input
+
+type="text"
+
+name="title"
+
+class="form-control"
+
+value="<?php echo htmlspecialchars($assignment['title']); ?>"
+
+required>
+
+</div>
+
+<div class="col-12 mb-4">
+
+<label class="form-label">
+
+Description
+
+</label>
+
+<textarea
+
+name="description"
+
+rows="8"
+
+class="form-control"
+
+required><?php echo htmlspecialchars($assignment['description']); ?></textarea>
+
 </div>
 
 <div class="text-end">
 
 <a
-
 href="manage_assignments.php"
-
 class="btn btn-secondary">
 
-Cancel
+<i class="fas fa-arrow-left me-2"></i>
+
+Back
 
 </a>
 
 <button
-
 type="submit"
+name="update"
+class="btn btn-primary">
 
-name="update_assignment"
-
-class="btn btn-success">
-
-<i class="fas fa-save"></i>
+<i class="fas fa-save me-2"></i>
 
 Update Assignment
 
 </button>
+
+</div>
 
 </div>
 
@@ -344,6 +374,8 @@ Update Assignment
 </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

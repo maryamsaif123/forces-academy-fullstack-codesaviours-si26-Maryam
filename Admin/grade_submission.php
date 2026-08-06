@@ -1,298 +1,282 @@
-
 <?php
 session_start();
 
-if(!isset($_SESSION['admin'])){
+if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
     exit();
 }
 
 include("../config/database.php");
 
-if(!isset($_GET['id'])){
-    header("Location: manage_submissions.php?success=1");
-exit();
+/*=========================================
+    VALIDATE SUBMISSION ID
+=========================================*/
+
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+
+    $_SESSION['error'] = "Invalid Submission ID.";
+
+    header("Location: manage_submissions.php");
+    exit();
 }
 
-$id=$_GET['id'];
+$id = (int)$_GET['id'];
 
-$query=mysqli_query($conn,"
-SELECT
+/*=========================================
+    FETCH SUBMISSION
+=========================================*/
+
+$stmt = mysqli_prepare(
+
+$conn,
+
+"SELECT
+
 submissions.*,
-students.name,
-students.email,
-assignments.title,
-courses.course_name
+
+students.full_name,
+students.roll_number,
+
+assignments.title
 
 FROM submissions
 
-LEFT JOIN students
-ON submissions.student_id=students.id
+INNER JOIN students
+ON students.id=submissions.student_id
 
-LEFT JOIN assignments
-ON submissions.assignment_id=assignments.id
+INNER JOIN assignments
+ON assignments.id=submissions.assignment_id
 
-LEFT JOIN courses
-ON assignments.course_id=courses.id
+WHERE submissions.id=?
 
-WHERE submissions.id='$id'
-");
+LIMIT 1"
 
-$submission=mysqli_fetch_assoc($query);
+);
 
-if(isset($_POST['grade_submission'])){
+mysqli_stmt_bind_param($stmt,"i",$id);
 
-$marks=$_POST['marks'];
+mysqli_stmt_execute($stmt);
 
-$total_marks=$_POST['total_marks'];
+$result=mysqli_stmt_get_result($stmt);
 
-$feedback=mysqli_real_escape_string($conn,$_POST['feedback']);
+if(mysqli_num_rows($result)==0){
 
-$exam_type=$_POST['exam_type'];
+$_SESSION['error']="Submission not found.";
 
-$percentage=($marks/$total_marks)*100;
+header("Location: manage_submissions.php");
 
-/* Grade */
+exit();
 
-if($percentage>=90){
+}
 
-$grade="A+";
+$submission=mysqli_fetch_assoc($result);
 
-}elseif($percentage>=80){
+/*=========================================
+    UPDATE GRADE
+=========================================*/
 
-$grade="A";
+if(isset($_POST['grade'])){
 
-}elseif($percentage>=70){
+$marks=(int)$_POST['marks'];
 
-$grade="B";
+$feedback=trim($_POST['feedback']);
 
-}elseif($percentage>=60){
+if($marks<0 || $marks>100){
 
-$grade="C";
+$_SESSION['error']="Marks must be between 0 and 100.";
 
-}elseif($percentage>=50){
+header("Location: grade_submission.php?id=".$id);
 
-$grade="D";
+exit();
+
+}
+
+$update=mysqli_prepare(
+
+$conn,
+
+"UPDATE submissions
+
+SET
+
+marks=?,
+feedback=?,
+status='graded'
+
+WHERE id=?"
+
+);
+
+mysqli_stmt_bind_param(
+
+$update,
+
+"isi",
+
+$marks,
+
+$feedback,
+
+$id
+
+);
+
+if(mysqli_stmt_execute($update)){
+
+$_SESSION['success']="Submission graded successfully.";
+
+header("Location: manage_submissions.php");
+
+exit();
 
 }else{
 
-$grade="F";
+$_SESSION['error']="Database Error.";
 
 }
-
-/* Update Submission */
-
-mysqli_query($conn,"
-UPDATE submissions
-SET
-
-status='graded'
-
-WHERE id='$id'
-");
-
-/* Insert Result */
-
-mysqli_query($conn,"
-INSERT INTO results(
-
-student_id,
-course_id,
-subject,
-marks,
-total_marks,
-grade,
-exam_type,
-remarks
-
-)
-
-VALUES(
-
-'{$submission['student_id']}',
-'{$submission['course_id']}',
-'{$submission['title']}',
-'$marks',
-'$total_marks',
-'$grade',
-'$exam_type',
-'$feedback'
-
-)
-
-");
-
-header("Location: manage_submissions.php?graded=1");
-
-}
-
-?>
-<?php include("sidebar.php"); ?>
-
-<div class="main-content">
-
-<?php include("navbar.php"); ?>
-<?php
-
-if(isset($_GET['success'])){
-
-?>
-
-<div class="alert alert-success alert-dismissible fade show">
-
-<i class="fas fa-check-circle"></i>
-
-Assignment graded successfully.
-
-<button
-class="btn-close"
-data-bs-dismiss="alert">
-
-</button>
-
-</div>
-
-<?php
 
 }
 
 ?>
 
-<div class="container-fluid">
+<!DOCTYPE html>
 
-<div class="page-header">
+<html lang="en">
 
-<div class="d-flex justify-content-between align-items-center">
+<head>
 
-<h2>
+<meta charset="UTF-8">
 
-⭐ Grade Assignment
+<meta name="viewport"
+content="width=device-width, initial-scale=1">
 
-</h2>
+<title>
 
-<a href="manage_submissions.php"
+Grade Submission
 
-class="btn btn-light">
+</title>
 
-← Back
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
 
-</a>
+<link
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+rel="stylesheet">
 
-</div>
+<link
+href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
 
-</div>
+<style>
 
-<div class="card shadow-lg border-0 rounded-4 mb-4">
+body{
 
-<div class="card-body">
+background:#f4f7fb;
 
-<div class="row">
+font-family:'Poppins',sans-serif;
 
-<div class="col-md-2 text-center">
+}
 
-<img
+.card{
 
-src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+border:none;
 
-width="120"
+border-radius:20px;
 
-class="rounded-circle">
+box-shadow:0 15px 35px rgba(0,0,0,.08);
 
-</div>
+}
 
-<div class="col-md-10">
+.card-header{
+
+background:linear-gradient(135deg,#0d6efd,#20c997);
+
+color:white;
+
+padding:25px;
+
+}
+
+.info{
+
+background:#f8f9fa;
+
+padding:20px;
+
+border-radius:12px;
+
+margin-bottom:25px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container py-5">
+
+<div class="card">
+
+<div class="card-header">
 
 <h3>
 
-<?php echo $submission['name']; ?>
+<i class="fas fa-star me-2"></i>
+
+Grade Assignment Submission
 
 </h3>
-
-<p>
-
-<?php echo $submission['email']; ?>
-
-</p>
-
-<hr>
-
-<h5>
-
-Assignment:
-
-<?php echo $submission['title']; ?>
-
-</h5>
-
-<h6>
-
-Course:
-
-<?php echo $submission['course_name']; ?>
-
-</h6>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="card shadow-lg border-0 rounded-4">
-
-<div class="card-header bg-success text-white">
-
-<h4>
-
-<i class="fas fa-star"></i>
-
-Grade Assignment
-
-</h4>
 
 </div>
 
 <div class="card-body">
 
-<form method="POST">
+<div class="info">
 
-<div class="row">
+<h5>
 
-<!-- Download Assignment -->
+Student Information
 
-<div class="col-md-12 mb-4">
+</h5>
 
-<label class="form-label fw-bold">
+<hr>
 
-Submitted File
+<p>
 
-</label>
+<strong>Name:</strong>
 
-<br>
+<?php echo htmlspecialchars($submission['full_name']); ?>
 
-<a href="../uploads/<?php echo $submission['file_path']; ?>"
+</p>
 
-class="btn btn-primary btn-lg"
+<p>
 
-download>
+<strong>Roll Number:</strong>
 
-<i class="fas fa-download"></i>
+<?php echo htmlspecialchars($submission['roll_number']); ?>
 
-Download Student Assignment
+</p>
 
-</a>
+<p>
+
+<strong>Assignment:</strong>
+
+<?php echo htmlspecialchars($submission['title']); ?>
+
+</p>
 
 </div>
 
-<!-- Marks -->
+<form method="POST">
 
-<div class="col-md-6 mb-3">
+<div class="mb-4">
 
 <label class="form-label">
 
-Obtained Marks
+Marks (0-100)
 
 </label>
 
@@ -304,117 +288,21 @@ name="marks"
 
 class="form-control"
 
-required
-
 min="0"
 
 max="100"
 
-placeholder="Enter Obtained Marks">
-
-</div>
-
-<!-- Total Marks -->
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-
-Total Marks
-
-</label>
-
-<input
-
-type="number"
-
-name="total_marks"
-
-class="form-control"
-
 required
 
-value="100">
+value="<?php echo $submission['marks']; ?>">
 
 </div>
 
-<!-- Exam Type -->
-
-<div class="col-md-6 mb-3">
+<div class="mb-4">
 
 <label class="form-label">
 
-Assessment Type
-
-</label>
-
-<select
-
-name="exam_type"
-
-class="form-select"
-
-required>
-
-<option value="">Select</option>
-
-<option value="Assignment">
-
-Assignment
-
-</option>
-
-<option value="Quiz">
-
-Quiz
-
-</option>
-
-<option value="Project">
-
-Project
-
-</option>
-
-<option value="Lab">
-
-Lab Task
-
-</option>
-
-</select>
-
-</div>
-
-<!-- Status -->
-
-<div class="col-md-6 mb-3">
-
-<label class="form-label">
-
-Submission Status
-
-</label>
-
-<input
-
-type="text"
-
-class="form-control"
-
-value="<?php echo ucfirst($submission['status']); ?>"
-
-readonly>
-
-</div>
-
-<!-- Feedback -->
-
-<div class="col-md-12 mb-4">
-
-<label class="form-label">
-
-Teacher Feedback
+Feedback
 
 </label>
 
@@ -422,23 +310,29 @@ Teacher Feedback
 
 name="feedback"
 
-rows="6"
+rows="8"
 
 class="form-control"
 
-placeholder="Write feedback for the student..."></textarea>
+placeholder="Write comments for the student..."><?php
+
+echo htmlspecialchars($submission['feedback']);
+
+?></textarea>
 
 </div>
 
-<!-- Buttons -->
+<div class="d-flex justify-content-end">
 
-<div class="col-md-12 text-end">
+<a
 
-<a href="manage_submissions.php"
+href="manage_submissions.php"
 
-class="btn btn-secondary btn-lg">
+class="btn btn-secondary me-2">
 
-Cancel
+<i class="fas fa-arrow-left me-2"></i>
+
+Back
 
 </a>
 
@@ -446,17 +340,15 @@ Cancel
 
 type="submit"
 
-name="grade_submission"
+name="grade"
 
-class="btn btn-success btn-lg">
+class="btn btn-success">
 
-<i class="fas fa-check-circle"></i>
+<i class="fas fa-check-circle me-2"></i>
 
 Save Grade
 
 </button>
-
-</div>
 
 </div>
 
@@ -465,152 +357,11 @@ Save Grade
 </div>
 
 </div>
-<button
-
-type="button"
-
-onclick="window.print();"
-
-class="btn btn-primary btn-lg">
-
-<i class="fas fa-print"></i>
-
-Print
-
-</button>
-
-<!-- Grade Information -->
-
-<div class="row mt-4">
-
-<div class="col-lg-4">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-body text-center">
-
-<i class="fas fa-award fa-4x text-warning mb-3"></i>
-
-<h4>Grading Scale</h4>
-
-<hr>
-
-<p><span class="badge bg-success">A+</span> 90 - 100</p>
-
-<p><span class="badge bg-primary">A</span> 80 - 89</p>
-
-<p><span class="badge bg-info">B</span> 70 - 79</p>
-
-<p><span class="badge bg-warning text-dark">C</span> 60 - 69</p>
-
-<p><span class="badge bg-secondary">D</span> 50 - 59</p>
-
-<p><span class="badge bg-danger">F</span> Below 50</p>
 
 </div>
 
-</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-</div>
+</body>
 
-<div class="col-lg-8">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white">
-
-<h5>
-
-<i class="fas fa-user-graduate text-success"></i>
-
-Submission Information
-
-</h5>
-
-</div>
-
-<div class="card-body">
-
-<table class="table table-borderless">
-
-<tr>
-
-<th width="180">Student</th>
-
-<td><?php echo $submission['name']; ?></td>
-
-</tr>
-
-<tr>
-
-<th>Email</th>
-
-<td><?php echo $submission['email']; ?></td>
-
-</tr>
-
-<tr>
-
-<th>Course</th>
-
-<td><?php echo $submission['course_name']; ?></td>
-
-</tr>
-
-<tr>
-
-<th>Assignment</th>
-
-<td><?php echo $submission['title']; ?></td>
-
-</tr>
-
-<tr>
-
-<th>Status</th>
-
-<td>
-
-<?php
-
-if($submission['status']=="graded"){
-
-?>
-
-<span class="badge bg-success">
-
-Graded
-
-</span>
-
-<?php
-
-}else{
-
-?>
-
-<span class="badge bg-warning text-dark">
-
-Pending
-
-</span>
-
-<?php
-
-}
-
-?>
-
-</td>
-
-</tr>
-
-</table>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
+</html>

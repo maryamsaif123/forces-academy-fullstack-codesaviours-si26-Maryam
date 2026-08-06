@@ -133,7 +133,7 @@ Only PDF, DOC, DOCX, ZIP and Images are allowed.
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="../css/dashboard.css">
+<link rel="stylesheet" href="dashboard.css">
 
 </head>
 

@@ -1,103 +1,69 @@
-<?php
-$currentPage = basename($_SERVER['PHP_SELF']);
-?>
-
+<!-- Sidebar -->
 <div class="sidebar">
 
-<div class="text-center py-4">
+    <div class="logo">
+        <h3>Force Academy</h3>
+        <small>LMS Portal</small>
+    </div>
 
-<?php
 
-if($_SESSION['student_gender']=="Female")
-{
-    $avatar="https://cdn-icons-png.flaticon.com/512/6997/6997662.png";
-}
-else
-{
-    $avatar="https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-}
+    <ul class="menu">
 
-?>
+        <li class="active">
+            <a href="dashboard.php">
+                <i class="fa fa-home"></i>
+                Dashboard
+            </a>
+        </li>
 
-<img
-src="<?php echo $avatar; ?>"
-width="120"
-class="rounded-circle shadow">
 
-<h3>
+        <li>
+            <a href="courses.php">
+                <i class="fa fa-book"></i>
+                My Courses
+            </a>
+        </li>
 
-Forces Academy
 
-</h3>
+        <li>
+            <a href="assignments.php">
+                <i class="fa fa-file"></i>
+                Assignments
+            </a>
+        </li>
 
-<p style="font-size:13px;opacity:.8;">
 
-Student Portal
+        <li>
+            <a href="results.php">
+                <i class="fa fa-chart-line"></i>
+                Results
+            </a>
+        </li>
 
-</p>
 
-</div>
+        <li>
+            <a href="notices.php">
+                <i class="fa fa-bullhorn"></i>
+                Notices
+            </a>
+        </li>
 
-<a href="dashboard.php"
-class="<?php if($currentPage=="dashboard.php") echo "active"; ?>">
 
-<i class="fas fa-home"></i>
+        <li>
+            <a href="profile.php">
+                <i class="fa fa-user"></i>
+                Profile
+            </a>
+        </li>
 
-Dashboard
 
-</a>
+        <li>
+            <a href="logout.php">
+                <i class="fa fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </li>
 
-<a href="courses.php"
-class="<?php if($currentPage=="courses.php") echo "active"; ?>">
-
-<i class="fas fa-book-open"></i>
-
-My Courses
-
-</a>
-
-<a href="assignments.php"
-class="<?php if($currentPage=="assignments.php") echo "active"; ?>">
-
-<i class="fas fa-file-alt"></i>
-
-Assignments
-
-</a>
-
-<a href="results.php"
-class="<?php if($currentPage=="results.php") echo "active"; ?>">
-
-<i class="fas fa-chart-line"></i>
-
-Results
-
-</a>
-
-<a href="notices.php"
-class="<?php if($currentPage=="notices.php") echo "active"; ?>">
-
-<i class="fas fa-bullhorn"></i>
-
-Notice Board
-
-</a>
-
-<a href="profile.php"
-class="<?php if($currentPage=="profile.php") echo "active"; ?>">
-
-<i class="fas fa-user"></i>
-
-My Profile
-
-</a>
-
-<a href="logout.php">
-
-<i class="fas fa-sign-out-alt"></i>
-
-Logout
-
-</a>
+    </ul>
 
 </div>

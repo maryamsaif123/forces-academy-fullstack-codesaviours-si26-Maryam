@@ -1,25 +1,36 @@
 <?php
 session_start();
-require_once "../config/database.php";
+include("../config/database.php");
 
-$error = "";
 $success = "";
+$error = "";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
+if(isset($_POST['register'])){
 
     $full_name = trim($_POST['full_name']);
-    $gender = $_POST['gender'];
     $email = trim($_POST['email']);
-    $password = $_POST['password'];
-    $confirm_password = $_POST['confirm_password'];
     $roll_number = trim($_POST['roll_number']);
     $class = trim($_POST['class']);
+    $gender = $_POST['gender'];
+    $phone = trim($_POST['phone']);
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
 
-    // Validation
+    /*=========================================
+        VALIDATION
+    =========================================*/
 
-    if(empty($full_name) || empty($email) || empty($password) || empty($confirm_password) || empty($roll_number) || empty($class)){
+    if(empty($full_name) || empty($email) || empty($roll_number) ||
+       empty($class) || empty($gender) || empty($phone) ||
+       empty($password) || empty($confirm_password)){
 
         $error = "All fields are required.";
+
+    }
+
+    elseif(!filter_var($email,FILTER_VALIDATE_EMAIL)){
+
+        $error = "Invalid email address.";
 
     }
 
@@ -31,62 +42,137 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     else{
 
-        // Check Email
+        /*=========================================
+            CHECK EMAIL
+        =========================================*/
 
-        $check = "SELECT * FROM students WHERE email = ?";
+        $check = mysqli_prepare(
+            $conn,
+            "SELECT id
+             FROM students
+             WHERE email=? OR roll_number=?"
+        );
 
-        $stmt = mysqli_prepare($conn,$check);
+        mysqli_stmt_bind_param(
+            $check,
+            "ss",
+            $email,
+            $roll_number
+        );
 
-        mysqli_stmt_bind_param($stmt,"s",$email);
+        mysqli_stmt_execute($check);
 
-        mysqli_stmt_execute($stmt);
+        mysqli_stmt_store_result($check);
 
-        $result = mysqli_stmt_get_result($stmt);
+        if(mysqli_stmt_num_rows($check)>0){
 
-        if(mysqli_num_rows($result)>0){
-
-            $error = "Email already exists.";
+            $error="Email or Roll Number already exists.";
 
         }
 
         else{
 
-            // Hash Password
+            /*=========================================
+                PHOTO UPLOAD
+            =========================================*/
 
-            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+            $photo = "";
 
-           $sql = "INSERT INTO students
-(full_name, gender, email, password, roll_number, class)
-VALUES
-(?,?,?,?,?,?)";
+            if(isset($_FILES['photo']) &&
+               $_FILES['photo']['error']==0){
 
-            $stmt = mysqli_prepare($conn,$sql);
+                $extension = strtolower(
+                    pathinfo(
+                        $_FILES['photo']['name'],
+                        PATHINFO_EXTENSION
+                    )
+                );
+
+                $allowed = ['jpg','jpeg','png','webp'];
+
+                if(in_array($extension,$allowed)){
+
+                    $photo = time()."_".rand(1000,9999).".".$extension;
+
+                    $upload_dir = "../uploads/students/";
+
+if(!is_dir($upload_dir)){
+    mkdir($upload_dir, 0777, true);
+}
+
+if(!move_uploaded_file($_FILES['photo']['tmp_name'], $upload_dir . $photo)){
+    $photo = "";
+}
+
+                }
+
+            }
+
+            /*=========================================
+                PASSWORD HASH
+            =========================================*/
+
+            $hashedPassword = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
+
+            /*=========================================
+                INSERT STUDENT
+            =========================================*/
+
+            $insert = mysqli_prepare(
+
+                $conn,
+
+                "INSERT INTO students
+
+                (
+                full_name,
+                email,
+                roll_number,
+                class,
+                gender,
+                phone,
+                password,
+                photo
+                )
+
+                VALUES
+
+                (?,?,?,?,?,?,?,?)"
+
+            );
 
             mysqli_stmt_bind_param(
-    $stmt,
-    "ssssss",
-    $full_name,
-    $gender,
-    $email,
-    $hashed_password,
-    $roll_number,
-    $class
-);
 
-            if(mysqli_stmt_execute($stmt)){
+                $insert,
 
-                header("Location: login.php?registered=1");
+                "ssssssss",
 
-                exit();
+                $full_name,
+                $email,
+                $roll_number,
+                $class,
+                $gender,
+                $phone,
+                $hashedPassword,
+                $photo
 
-            }
+            );
 
-            else{
+            if(mysqli_stmt_execute($insert)){
 
-                $error = "Registration Failed.";
+    $_SESSION['success'] = "Registration successful. Please login.";
 
-            }
+    header("Location: login.php");
+    exit();
 
+}else{
+
+    $error = "Registration failed.";
+
+}
         }
 
     }
@@ -96,169 +182,488 @@ VALUES
 ?>
 
 <!DOCTYPE html>
-<html>
+
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<title>Student Registration</title>
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<title>
 
-</head>
+Student Registration
 
-<body class="bg-light">
+</title>
 
-<div class="container mt-5">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
 
-<div class="row justify-content-center">
+<link
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+rel="stylesheet">
 
-<div class="col-md-6">
+<link
+href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
 
-<div class="card shadow">
+<style>
 
-<div class="card-header bg-success text-white text-center">
+body{
 
-<h3>Student Registration</h3>
+font-family:'Poppins',sans-serif;
 
-</div>
+background:linear-gradient(135deg,#2563eb,#3b82f6);
 
-<div class="card-body">
+min-height:100vh;
 
-<?php
+display:flex;
 
-if($error!=""){
+justify-content:center;
 
-echo "<div class='alert alert-danger'>$error</div>";
+align-items:center;
+
+padding:30px;
 
 }
 
-?>
+.register-card{
 
-<form method="POST">
+background:white;
 
-<div class="mb-3">
+border-radius:20px;
 
-<label>Full Name</label>
+box-shadow:0 20px 45px rgba(0,0,0,.18);
+
+padding:40px;
+
+width:100%;
+
+max-width:850px;
+
+}
+
+.form-control,
+.form-select{
+
+border-radius:12px;
+
+}
+
+.btn-register{
+
+border-radius:12px;
+
+padding:12px;
+
+font-weight:600;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="register-card">
+
+<h2 class="text-center mb-4">
+
+<i class="fas fa-user-plus text-primary"></i>
+
+Student Registration
+
+</h2>
+
+<?php if($success!=""){ ?>
+
+<div class="alert alert-success">
+
+<?php echo $success; ?>
+
+</div>
+
+<?php } ?>
+
+<?php if($error!=""){ ?>
+
+<div class="alert alert-danger">
+
+<?php echo $error; ?>
+
+</div>
+
+<?php } ?>
+
+<form
+
+method="POST"
+
+enctype="multipart/form-data">
+
+<div class="row">
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Full Name
+
+</label>
+
+<div class="input-group">
+
+<span class="input-group-text">
+
+<i class="fas fa-user"></i>
+
+</span>
 
 <input
+
 type="text"
+
 name="full_name"
+
 class="form-control"
+
+placeholder="Enter full name"
+
 required>
 
 </div>
 
-<div class="mb-3">
+</div>
 
-<label class="form-label">Gender</label>
+<div class="col-md-6 mb-3">
 
-<select name="gender" class="form-select" required>
+<label class="form-label">
 
-<option value="">Select Gender</option>
+Email Address
 
-<option value="Male">Male</option>
+</label>
 
-<option value="Female">Female</option>
+<div class="input-group">
+
+<span class="input-group-text">
+
+<i class="fas fa-envelope"></i>
+
+</span>
+
+<input
+
+type="email"
+
+name="email"
+
+class="form-control"
+
+placeholder="Enter email"
+
+required>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Roll Number
+
+</label>
+
+<div class="input-group">
+
+<span class="input-group-text">
+
+<i class="fas fa-id-card"></i>
+
+</span>
+
+<input
+
+type="text"
+
+name="roll_number"
+
+class="form-control"
+
+placeholder="Enter roll number"
+
+required>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Class
+
+</label>
+
+<div class="input-group">
+
+<span class="input-group-text">
+
+<i class="fas fa-graduation-cap"></i>
+
+</span>
+
+<input
+
+type="text"
+
+name="class"
+
+class="form-control"
+
+placeholder="Example: BSIT 6th Semester"
+
+required>
+
+</div>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Gender
+
+</label>
+
+<select
+
+name="gender"
+
+class="form-select"
+
+required>
+
+<option value="">
+
+Select Gender
+
+</option>
+
+<option value="Male">
+
+Male
+
+</option>
+
+<option value="Female">
+
+Female
+
+</option>
+
+<option value="Other">
+
+Other
+
+</option>
 
 </select>
 
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
-<label>Email</label>
+<label class="form-label">
+
+Phone Number
+
+</label>
+
+<div class="input-group">
+
+<span class="input-group-text">
+
+<i class="fas fa-phone"></i>
+
+</span>
 
 <input
-type="email"
-name="email"
+
+type="text"
+
+name="phone"
+
 class="form-control"
+
+placeholder="03XXXXXXXXX"
+
 required>
 
 </div>
 
-<div class="mb-3">
+</div>
 
-<label>Password</label>
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Password
+
+</label>
+
+<div class="input-group">
 
 <input
+
 type="password"
+
 name="password"
+
+id="password"
+
 class="form-control"
+
+placeholder="Create password"
+
 required>
-
-</div>
-
-<div class="mb-3">
-
-<label>Confirm Password</label>
-
-<input
-type="password"
-name="confirm_password"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label>Roll Number</label>
-
-<input
-type="text"
-name="roll_number"
-class="form-control"
-required>
-
-</div>
-
-<div class="mb-3">
-
-<label>Class</label>
-
-<input
-type="text"
-name="class"
-class="form-control"
-required>
-
-</div>
 
 <button
-type="submit"
-class="btn btn-success w-100">
 
-Register
+class="btn btn-outline-secondary"
+
+type="button"
+
+onclick="togglePassword('password')">
+
+<i class="fas fa-eye"></i>
 
 </button>
 
-</form>
+</div>
 
-<hr>
+</div>
 
-<p class="text-center">
+<div class="col-md-6 mb-3">
+
+<label class="form-label">
+
+Confirm Password
+
+</label>
+
+<div class="input-group">
+
+<input
+
+type="password"
+
+name="confirm_password"
+
+id="confirm_password"
+
+class="form-control"
+
+placeholder="Confirm password"
+
+required>
+
+<button
+
+class="btn btn-outline-secondary"
+
+type="button"
+
+onclick="togglePassword('confirm_password')">
+
+<i class="fas fa-eye"></i>
+
+</button>
+
+</div>
+
+</div>
+
+<div class="col-md-12 mb-4">
+
+<label class="form-label">
+
+Profile Photo
+
+</label>
+
+<input
+
+type="file"
+
+name="photo"
+
+class="form-control"
+
+accept=".jpg,.jpeg,.png,.webp">
+
+</div>
+
+<div class="col-md-12 d-grid">
+
+<button
+
+type="submit"
+
+name="register"
+
+class="btn btn-primary btn-register">
+
+<i class="fas fa-user-plus me-2"></i>
+
+Create Student Account
+
+</button>
+
+</div>
+
+<div class="col-md-12 text-center mt-4">
 
 Already have an account?
 
-<a href="login.php">
+<a
+
+href="login.php"
+
+class="text-decoration-none fw-bold">
 
 Login Here
 
 </a>
 
-</p>
-
 </div>
 
 </div>
 
-</div>
+</form>
 
 </div>
 
-</div>
+<script>
+
+function togglePassword(id){
+
+const field=document.getElementById(id);
+
+field.type=(field.type==="password")?"text":"password";
+
+}
+
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
 

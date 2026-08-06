@@ -1,285 +1,819 @@
 <?php
 session_start();
 
-if(!isset($_SESSION['admin'])){
+if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
     exit();
 }
 
-include("../config/database.php");
+include("config/database.php");
 
-if(!isset($_GET['id'])){
+/*=========================================
+    CHECK ID
+=========================================*/
+
+if (!isset($_GET['id']) || !is_numeric($_GET['id'])) {
+
+    $_SESSION['error'] = "Invalid Student ID.";
+
     header("Location: manage_students.php");
     exit();
 }
 
-$id = intval($_GET['id']);
+$id = (int) $_GET['id'];
 
-$query = mysqli_query($conn,"SELECT * FROM students WHERE id='$id'");
+/*=========================================
+    STUDENT DETAILS
+=========================================*/
 
-if(mysqli_num_rows($query)==0){
-    die("Student not found");
+$query = mysqli_prepare(
+    $conn,
+    "SELECT * FROM students WHERE id=? LIMIT 1"
+);
+
+mysqli_stmt_bind_param($query, "i", $id);
+mysqli_stmt_execute($query);
+
+$result = mysqli_stmt_get_result($query);
+
+if (mysqli_num_rows($result) == 0) {
+
+    $_SESSION['error'] = "Student not found.";
+
+    header("Location: manage_students.php");
+    exit();
 }
 
-$student=mysqli_fetch_assoc($query);
+$student = mysqli_fetch_assoc($result);
+
+/*=========================================
+    TOTAL SUBMISSIONS
+=========================================*/
+
+$submissionCount = 0;
+
+$check = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) total
+     FROM submissions
+     WHERE student_id='$id'"
+);
+
+if ($check) {
+    $submissionCount = mysqli_fetch_assoc($check)['total'];
+}
+
+/*=========================================
+    TOTAL RESULTS
+=========================================*/
+
+$resultCount = 0;
+
+$check2 = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) total
+     FROM results
+     WHERE student_id='$id'"
+);
+
+if ($check2) {
+    $resultCount = mysqli_fetch_assoc($check2)['total'];
+}
+
+$pageTitle = "Student Profile";
 ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1">
 
-<title>Student Profile</title>
+<title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+Student Profile
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+</title>
 
-<link rel="stylesheet" href="dashboard.css">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
 
-<style>
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
-.profile-card{
-
-background:white;
-
-border-radius:20px;
-
-box-shadow:0 10px 30px rgba(0,0,0,.1);
-
-padding:40px;
-
-}
-
-.avatar{
-
-width:140px;
-
-height:140px;
-
-border-radius:50%;
-
-border:5px solid #22c55e;
-
-}
-
-.info{
-
-padding:15px 0;
-
-border-bottom:1px solid #eee;
-
-}
-
-.info:last-child{
-
-border:none;
-
-}
-
-.label{
-
-font-weight:600;
-
-color:#666;
-
-}
-
-.value{
-
-font-size:18px;
-
-font-weight:500;
-
-}
-
-</style>
+<link
+rel="stylesheet"
+href="assets/css/dashboard.css">
 
 </head>
 
 <body>
 
-<?php include("sidebar.php"); ?>
+<div class="wrapper">
+
+<?php include("includes/sidebar.php"); ?>
 
 <div class="main-content">
 
-<?php include("navbar.php"); ?>
+<?php include("includes/topbar.php"); ?>
 
-<div class="container">
+<div class="container-fluid">
 
-<div class="profile-card">
+<div class="row mb-4">
 
-<div class="text-center">
+<div class="col-lg-12">
 
-<img
-src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
-class="avatar">
+<h2 class="fw-bold">
 
-<h2 class="mt-3">
+<i class="fas fa-user-circle text-primary"></i>
 
-<?php echo $student['full_name']; ?>
+Student Profile
 
 </h2>
 
 <p class="text-muted">
 
-Student Profile
+Complete student information.
 
 </p>
 
-<span class="badge bg-success">
-
-Active Student
-
-</span>
-
-</div>
-
-<hr>
-
-<div class="row mt-4">
-
-<div class="col-md-6">
-
-<div class="info">
-
-<div class="label">
-
-<i class="fas fa-user"></i>
-
-Full Name
-
-</div>
-
-<div class="value">
-
-<?php echo $student['full_name']; ?>
-
 </div>
 
 </div>
+<!-- ==========================================
+        PROFILE SECTION
+========================================== -->
 
-<div class="info">
+<div class="row">
 
-<div class="label">
+    <!-- Profile Card -->
 
-<i class="fas fa-envelope"></i>
+    <div class="col-lg-4">
 
-Email
+        <div class="card shadow-lg border-0 rounded-4">
 
+            <div class="card-body text-center">
+
+                <?php
+
+                $photo = "assets/images/avatar.png";
+
+                if (
+                    isset($student['photo']) &&
+                    !empty($student['photo']) &&
+                    file_exists("../uploads/students/" . $student['photo'])
+                ) {
+                    $photo = "../uploads/students/" . $student['photo'];
+                }
+
+                ?>
+
+                <img
+                    src="<?php echo $photo; ?>"
+                    class="rounded-circle shadow mb-3"
+                    width="170"
+                    height="170"
+                    style="object-fit:cover;">
+
+                <h3 class="fw-bold">
+
+                    <?php echo htmlspecialchars($student['full_name']); ?>
+
+                </h3>
+
+                <span class="badge bg-success">
+
+                    Active Student
+
+                </span>
+
+                <hr>
+
+                <div class="text-start">
+
+                    <p>
+
+                        <i class="fas fa-id-card text-primary me-2"></i>
+
+                        <strong>Roll Number:</strong>
+
+                        <?php echo htmlspecialchars($student['roll_number']); ?>
+
+                    </p>
+
+                    <p>
+
+                        <i class="fas fa-envelope text-primary me-2"></i>
+
+                        <strong>Email:</strong>
+
+                        <?php echo htmlspecialchars($student['email']); ?>
+
+                    </p>
+
+                    <p>
+
+                        <i class="fas fa-user text-primary me-2"></i>
+
+                        <strong>Gender:</strong>
+
+                        <?php echo htmlspecialchars($student['gender']); ?>
+
+                    </p>
+
+                    <p>
+
+                        <i class="fas fa-graduation-cap text-primary me-2"></i>
+
+                        <strong>Class:</strong>
+
+                        <?php echo htmlspecialchars($student['class']); ?>
+
+                    </p>
+
+                    <p>
+
+                        <i class="fas fa-calendar text-primary me-2"></i>
+
+                        <strong>Registered:</strong>
+
+                        <?php echo date(
+                            "d M Y",
+                            strtotime($student['created_at'])
+                        ); ?>
+
+                    </p>
+
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+
+                    <a
+                        href="edit_student.php?id=<?php echo $student['id']; ?>"
+                        class="btn btn-warning">
+
+                        <i class="fas fa-edit me-2"></i>
+
+                        Edit Student
+
+                    </a>
+
+                    <a
+                        href="delete_student.php?id=<?php echo $student['id']; ?>"
+                        class="btn btn-danger"
+                        onclick="return confirm('Delete this student?');">
+
+                        <i class="fas fa-trash me-2"></i>
+
+                        Delete Student
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Statistics -->
+
+    <div class="col-lg-8">
+
+        <div class="row">
+
+            <div class="col-md-6 mb-4">
+
+                <div class="dashboard-card bg-primary text-white">
+
+                    <div class="card-icon">
+
+                        <i class="fas fa-upload"></i>
+
+                    </div>
+
+                    <h6>
+
+                        Total Submissions
+
+                    </h6>
+
+                    <h2>
+
+                        <?php echo $submissionCount; ?>
+
+                    </h2>
+
+                    <p>
+
+                        Assignment uploads
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-6 mb-4">
+
+                <div class="dashboard-card bg-success text-white">
+
+                    <div class="card-icon">
+
+                        <i class="fas fa-chart-line"></i>
+
+                    </div>
+
+                    <h6>
+
+                        Published Results
+
+                    </h6>
+
+                    <h2>
+
+                        <?php echo $resultCount; ?>
+
+                    </h2>
+
+                    <p>
+
+                        Academic records
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-6 mb-4">
+
+                <div class="dashboard-card bg-warning text-white">
+
+                    <div class="card-icon">
+
+                        <i class="fas fa-user-check"></i>
+
+                    </div>
+
+                    <h6>
+
+                        Student Status
+
+                    </h6>
+
+                    <h2>
+
+                        Active
+
+                    </h2>
+
+                    <p>
+
+                        Currently enrolled
+
+                    </p>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="col-md-6 mb-4">
+
+                <div class="dashboard-card bg-danger text-white">
+
+                    <div class="card-icon">
+
+                        <i class="fas fa-award"></i>
+
+                    </div>
+
+                    <h6>
+
+                        Performance
+
+                    </h6>
+
+                    <h2>
+
+                        Good
+
+                    </h2>
+
+                    <p>
+
+                        Overall progress
+
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+        </div>
+    </div>
 </div>
 
-<div class="value">
+<!-- ==========================================
+        ASSIGNMENT SUBMISSIONS
+========================================== -->
 
-<?php echo $student['email']; ?>
+<div class="card shadow-lg border-0 rounded-4 mt-4">
 
-</div>
+    <div class="card-header bg-white">
 
-</div>
+        <h4>
 
-<div class="info">
+            <i class="fas fa-file-upload text-primary me-2"></i>
 
-<div class="label">
+            Assignment Submissions
 
-<i class="fas fa-id-card"></i>
+        </h4>
 
-Roll Number
+    </div>
 
-</div>
+    <div class="card-body">
 
-<div class="value">
+<?php
 
-<?php echo $student['roll_number']; ?>
+$submissionQuery = mysqli_query($conn, "
 
-</div>
+SELECT
 
-</div>
+submissions.*,
 
-</div>
+assignments.title
 
-<div class="col-md-6">
+FROM submissions
 
-<div class="info">
+LEFT JOIN assignments
 
-<div class="label">
+ON submissions.assignment_id=assignments.id
 
-<i class="fas fa-graduation-cap"></i>
+WHERE submissions.student_id='$id'
 
-Class
+ORDER BY submissions.submitted_at DESC
 
-</div>
+");
 
-<div class="value">
+?>
 
-<?php echo $student['class']; ?>
+<div class="table-responsive">
 
-</div>
+<table class="table table-hover align-middle">
 
-</div>
+<thead class="table-light">
 
-<div class="info">
+<tr>
 
-<div class="label">
+<th>#</th>
 
-<i class="fas fa-calendar"></i>
+<th>Assignment</th>
 
-Registered On
+<th>Submitted</th>
 
-</div>
+<th>Status</th>
 
-<div class="value">
+<th>Marks</th>
 
-<?php echo date("d M Y",strtotime($student['created_at'])); ?>
+<th>Feedback</th>
 
-</div>
+<th>File</th>
 
-</div>
+</tr>
 
-<div class="info">
+</thead>
 
-<div class="label">
+<tbody>
 
-<i class="fas fa-check-circle"></i>
+<?php
 
-Status
+$i=1;
 
-</div>
+if(mysqli_num_rows($submissionQuery)>0){
 
-<div class="value">
+while($row=mysqli_fetch_assoc($submissionQuery)){
 
-<span class="badge bg-success">
+?>
 
-Active
+<tr>
 
-</span>
+<td>
 
-</div>
+<?php echo $i++; ?>
 
-</div>
+</td>
 
-</div>
+<td>
 
-</div>
+<?php echo htmlspecialchars($row['title']); ?>
 
-<div class="text-center mt-5">
+</td>
+
+<td>
+
+<?php echo date("d M Y",strtotime($row['submitted_at'])); ?>
+
+</td>
+
+<td>
+
+<?php
+
+if($row['status']=="graded"){
+
+echo '<span class="badge bg-success">Graded</span>';
+
+}else{
+
+echo '<span class="badge bg-warning">Submitted</span>';
+
+}
+
+?>
+
+</td>
+
+<td>
+
+<?php
+
+echo ($row['marks']!="")
+
+? $row['marks']." /100"
+: "-";
+
+?>
+
+</td>
+
+<td>
+
+<?php
+
+echo !empty($row['feedback'])
+
+? htmlspecialchars($row['feedback'])
+
+: '<span class="text-muted">No Feedback</span>';
+
+?>
+
+</td>
+
+<td>
+
+<?php
+
+if(!empty($row['file_path'])){
+
+?>
 
 <a
-href="edit_student.php?id=<?php echo $student['id']; ?>"
-class="btn btn-warning btn-lg">
 
-<i class="fas fa-edit"></i>
+href="../<?php echo $row['file_path']; ?>"
 
-Edit Student
+target="_blank"
+
+class="btn btn-sm btn-primary">
+
+<i class="fas fa-download"></i>
+
+Download
 
 </a>
 
+<?php
+
+}else{
+
+echo "-";
+
+}
+
+?>
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+}else{
+
+?>
+
+<tr>
+
+<td colspan="7" class="text-center">
+
+No Assignment Submitted Yet.
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+?>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- ==========================================
+        RESULT HISTORY
+========================================== -->
+
+<div class="card shadow-lg border-0 rounded-4 mt-4">
+
+<div class="card-header bg-white">
+
+<h4>
+
+<i class="fas fa-chart-line text-success me-2"></i>
+
+Academic Results
+
+</h4>
+
+</div>
+
+<div class="card-body">
+
+<?php
+
+$resultQuery=mysqli_query($conn,"
+
+SELECT *
+
+FROM results
+
+WHERE student_id='$id'
+
+ORDER BY id DESC
+
+");
+
+?>
+
+<div class="table-responsive">
+
+<table class="table table-bordered">
+
+<thead class="table-success">
+
+<tr>
+
+<th>#</th>
+
+<th>Course</th>
+
+<th>Total Marks</th>
+
+<th>Obtained</th>
+
+<th>Grade</th>
+
+<th>Result Date</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+<?php
+
+$j=1;
+
+if(mysqli_num_rows($resultQuery)>0){
+
+while($result=mysqli_fetch_assoc($resultQuery)){
+
+?>
+
+<tr>
+
+<td>
+
+<?php echo $j++; ?>
+
+</td>
+
+<td>
+
+<?php echo htmlspecialchars($result['course_name']); ?>
+
+</td>
+
+<td>
+
+<?php echo $result['total_marks']; ?>
+
+</td>
+
+<td>
+
+<?php echo $result['obtained_marks']; ?>
+
+</td>
+
+<td>
+
+<span class="badge bg-primary">
+
+<?php echo $result['grade']; ?>
+
+</span>
+
+</td>
+
+<td>
+
+<?php echo date("d M Y",strtotime($result['created_at'])); ?>
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+}else{
+
+?>
+
+<tr>
+
+<td colspan="6" class="text-center">
+
+No Results Available.
+
+</td>
+
+</tr>
+
+<?php
+
+}
+
+?>
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- ==========================================
+        ACTION BUTTONS
+========================================== -->
+
+<div class="text-end mt-4 mb-5">
+
 <a
+
 href="manage_students.php"
-class="btn btn-secondary btn-lg">
+
+class="btn btn-secondary">
 
 <i class="fas fa-arrow-left"></i>
 
@@ -287,13 +821,43 @@ Back
 
 </a>
 
-</div>
+<a
+
+href="edit_student.php?id=<?php echo $student['id']; ?>"
+
+class="btn btn-warning">
+
+<i class="fas fa-edit"></i>
+
+Edit
+
+</a>
+
+<a
+
+href="delete_student.php?id=<?php echo $student['id']; ?>"
+
+class="btn btn-danger"
+
+onclick="return confirm('Delete this student?')">
+
+<i class="fas fa-trash"></i>
+
+Delete
+
+</a>
 
 </div>
 
 </div>
 
 </div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="assets/js/dashboard.js"></script>
 
 </body>
 

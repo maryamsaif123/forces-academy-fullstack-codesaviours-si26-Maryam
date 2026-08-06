@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['admin'])) {
+if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -13,59 +13,260 @@ if (!isset($_GET['id'])) {
     exit();
 }
 
-$id = $_GET['id'];
+$id = (int)$_GET['id'];
 
-$query = "SELECT * FROM students WHERE id='$id'";
-$result = mysqli_query($conn, $query);
-$student = mysqli_fetch_assoc($result);
+/*====================================
+    FETCH STUDENT
+=====================================*/
 
-if (!$student) {
-    die("Student not found.");
+$query = mysqli_prepare($conn,
+"SELECT * FROM students WHERE id=?");
+
+mysqli_stmt_bind_param($query,"i",$id);
+
+mysqli_stmt_execute($query);
+
+$result=mysqli_stmt_get_result($query);
+
+if(mysqli_num_rows($result)==0){
+
+$_SESSION['error']="Student not found.";
+
+header("Location: manage_students.php");
+
+exit();
+
 }
 
-$message = "";
+$student=mysqli_fetch_assoc($result);
 
-if (isset($_POST['update_student'])) {
 
-    $full_name = mysqli_real_escape_string($conn, $_POST['full_name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $roll_number = mysqli_real_escape_string($conn, $_POST['roll_number']);
-    $class = mysqli_real_escape_string($conn, $_POST['class']);
+/*====================================
+    UPDATE STUDENT
+=====================================*/
 
-    $update = "UPDATE students SET
-                full_name='$full_name',
-                email='$email',
-                roll_number='$roll_number',
-                class='$class'
-                WHERE id='$id'";
+if(isset($_POST['update'])){
 
-    if (mysqli_query($conn, $update)) {
+$full_name=trim($_POST['full_name']);
+$email=trim($_POST['email']);
+$gender=trim($_POST['gender']);
+$roll_number=trim($_POST['roll_number']);
+$class=trim($_POST['class']);
 
-        $message = "<div class='alert alert-success'>
-                        Student updated successfully.
-                    </div>";
 
-        $query = "SELECT * FROM students WHERE id='$id'";
-        $result = mysqli_query($conn, $query);
-        $student = mysqli_fetch_assoc($result);
 
-    } else {
+/* PASSWORD */
 
-        $message = "<div class='alert alert-danger'>
-                        Update failed.
-                    </div>";
-    }
+$password=$student['password'];
+
+if(!empty($_POST['password'])){
+
+$password=password_hash($_POST['password'],PASSWORD_DEFAULT);
+
 }
+
+
+
+/* PHOTO */
+
+$photo=$student['photo'] ?? "";
+
+if(isset($_FILES['photo']) && $_FILES['photo']['error']==0){
+
+$allowed=['jpg','jpeg','png','gif','webp'];
+
+$ext=strtolower(pathinfo($_FILES['photo']['name'],PATHINFO_EXTENSION));
+
+if(in_array($ext,$allowed)){
+
+if(!empty($photo) && file_exists("../uploads/students/".$photo)){
+
+unlink("../uploads/students/".$photo);
+
+}
+
+$photo=time()."_".uniqid().".".$ext;
+
+move_uploaded_file(
+
+$_FILES['photo']['tmp_name'],
+
+"../uploads/students/".$photo
+
+);
+
+}
+
+}
+
+
+
+/* DUPLICATE CHECK */
+
+$check=mysqli_prepare(
+
+$conn,
+
+"SELECT id FROM students
+WHERE
+(email=? OR roll_number=?)
+AND id<>?"
+
+);
+
+mysqli_stmt_bind_param(
+
+$check,
+
+"ssi",
+
+$email,
+
+$roll_number,
+
+$id
+
+);
+
+mysqli_stmt_execute($check);
+
+mysqli_stmt_store_result($check);
+
+if(mysqli_stmt_num_rows($check)>0){
+
+$_SESSION['error']="Email or Roll Number already exists.";
+
+header("Location: edit_student.php?id=".$id);
+
+exit();
+
+}
+
+
+
+/* UPDATE */
+
+if(isset($student['photo'])){
+
+$sql=mysqli_prepare(
+
+$conn,
+
+"UPDATE students SET
+
+full_name=?,
+
+gender=?,
+
+email=?,
+
+password=?,
+
+roll_number=?,
+
+class=?,
+
+photo=?
+
+WHERE id=?"
+
+);
+
+mysqli_stmt_bind_param(
+
+$sql,
+
+"sssssssi",
+
+$full_name,
+
+$gender,
+
+$email,
+
+$password,
+
+$roll_number,
+
+$class,
+
+$photo,
+
+$id
+
+);
+
+}else{
+
+$sql=mysqli_prepare(
+
+$conn,
+
+"UPDATE students SET
+
+full_name=?,
+
+gender=?,
+
+email=?,
+
+password=?,
+
+roll_number=?,
+
+class=?
+
+WHERE id=?"
+
+);
+
+mysqli_stmt_bind_param(
+
+$sql,
+
+"ssssssi",
+
+$full_name,
+
+$gender,
+
+$email,
+
+$password,
+
+$roll_number,
+
+$class,
+
+$id
+
+);
+
+}
+
+if(mysqli_stmt_execute($sql)){
+
+$_SESSION['success']="Student updated successfully.";
+
+header("Location: manage_students.php");
+
+exit();
+
+}else{
+
+$_SESSION['error']="Database Error.";
+
+}
+
+}
+
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+
+<html>
 
 <head>
-
-<meta charset="UTF-8">
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Edit Student</title>
 
@@ -75,17 +276,11 @@ if (isset($_POST['update_student'])) {
 
 <body class="bg-light">
 
-<?php include("navbar.php"); ?>
-
 <div class="container mt-5">
-
-<div class="row justify-content-center">
-
-<div class="col-md-8">
 
 <div class="card shadow">
 
-<div class="card-header bg-warning">
+<div class="card-header">
 
 <h3>Edit Student</h3>
 
@@ -93,76 +288,177 @@ if (isset($_POST['update_student'])) {
 
 <div class="card-body">
 
-<?php echo $message; ?>
+<form method="POST" enctype="multipart/form-data">
 
-<form method="POST">
+<div class="row">
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
-<label>Full Name</label>
+<label>Name</label>
 
 <input
+
 type="text"
+
 name="full_name"
+
 class="form-control"
-value="<?php echo $student['full_name']; ?>"
+
+value="<?= htmlspecialchars($student['full_name']); ?>"
+
 required>
 
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
 <label>Email</label>
 
 <input
+
 type="email"
+
 name="email"
+
 class="form-control"
-value="<?php echo $student['email']; ?>"
+
+value="<?= htmlspecialchars($student['email']); ?>"
+
 required>
 
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
 <label>Roll Number</label>
 
 <input
+
 type="text"
+
 name="roll_number"
+
 class="form-control"
-value="<?php echo $student['roll_number']; ?>"
+
+value="<?= htmlspecialchars($student['roll_number']); ?>"
+
 required>
 
 </div>
 
-<div class="mb-3">
+<div class="col-md-6 mb-3">
 
 <label>Class</label>
 
 <input
+
 type="text"
+
 name="class"
+
 class="form-control"
-value="<?php echo $student['class']; ?>"
+
+value="<?= htmlspecialchars($student['class']); ?>"
+
 required>
 
 </div>
 
+<div class="col-md-6 mb-3">
+
+<label>Gender</label>
+
+<select
+
+name="gender"
+
+class="form-select">
+
+<option <?=($student['gender']=="Male")?"selected":"";?>>Male</option>
+
+<option <?=($student['gender']=="Female")?"selected":"";?>>Female</option>
+
+</select>
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<label>New Password</label>
+
+<input
+
+type="password"
+
+name="password"
+
+class="form-control"
+
+placeholder="Leave blank to keep current password">
+
+</div>
+
+<?php if(isset($student['photo'])){ ?>
+
+<div class="col-md-6 mb-3">
+
+<label>Photo</label>
+
+<input
+
+type="file"
+
+name="photo"
+
+class="form-control">
+
+</div>
+
+<div class="col-md-6 mb-3">
+
+<?php
+
+$image="assets/images/avatar.png";
+
+if(!empty($student['photo'])){
+
+$image="../uploads/students/".$student['photo'];
+
+}
+
+?>
+
+<img src="<?= $image; ?>" width="120" class="rounded-circle shadow">
+
+</div>
+
+<?php } ?>
+
+</div>
+
+<div class="mt-3">
+
 <button
-type="submit"
-name="update_student"
-class="btn btn-warning">
+
+class="btn btn-primary"
+
+name="update">
 
 Update Student
 
 </button>
 
-<a href="manage_students.php" class="btn btn-secondary">
+<a
 
-Back
+href="manage_students.php"
+
+class="btn btn-secondary">
+
+Cancel
 
 </a>
+
+</div>
 
 </form>
 
@@ -171,12 +467,6 @@ Back
 </div>
 
 </div>
-
-</div>
-
-</div>
-
-<?php include("footer.php"); ?>
 
 </body>
 

@@ -1,97 +1,1245 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['admin'])) {
+if(!isset($_SESSION['admin_id'])){
+
     header("Location: login.php");
     exit();
+
 }
 
 include("../config/database.php");
-
-// Statistics
-$totalStudents = mysqli_num_rows(mysqli_query($conn,"SELECT * FROM students"));
-$totalCourses = mysqli_num_rows(mysqli_query($conn,"SELECT * FROM courses"));
-$totalAssignments = mysqli_num_rows(mysqli_query($conn,"SELECT * FROM assignments"));
-$totalSubmissions = mysqli_num_rows(mysqli_query($conn,"SELECT * FROM submissions"));
-
-date_default_timezone_set("Asia/Karachi");
-
-$hour=date("H");
-
-if($hour<12){
-$greeting="Good Morning";
-}elseif($hour<17){
-$greeting="Good Afternoon";
-}else{
-$greeting="Good Evening";
-}
 ?>
 
-<!DOCTYPE html>
+<?php
 
-<html>
+include("../config/database.php");
+
+// Admin Information
+$admin_id = $_SESSION['admin_id'];
+
+$adminQuery = mysqli_query($conn,
+"SELECT * FROM admins
+WHERE id='$admin_id'
+LIMIT 1");
+
+$admin = mysqli_fetch_assoc($adminQuery);
+
+$admin_name = $admin['full_name'] ?? "Administrator";
+
+
+
+/*==================================================
+    DASHBOARD COUNTS
+===================================================*/
+
+// Students
+$studentResult = mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM students");
+
+$totalStudents = 0;
+
+if($studentResult){
+    $totalStudents = mysqli_fetch_assoc($studentResult)['total'];
+}
+
+
+
+// Teachers
+$teacherResult = mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM teachers");
+
+$totalTeachers = 0;
+
+if($teacherResult){
+    $totalTeachers = mysqli_fetch_assoc($teacherResult)['total'];
+}
+
+
+
+// Courses
+$courseResult = mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM courses");
+
+$totalCourses = 0;
+
+if($courseResult){
+    $totalCourses = mysqli_fetch_assoc($courseResult)['total'];
+}
+
+
+
+// Assignments
+$assignmentResult = mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM assignments");
+
+$totalAssignments = 0;
+
+if($assignmentResult){
+    $totalAssignments = mysqli_fetch_assoc($assignmentResult)['total'];
+}
+
+
+
+// Submitted Assignments
+$submissionResult = mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM submissions");
+
+$totalSubmissions = 0;
+
+if($submissionResult){
+    $totalSubmissions = mysqli_fetch_assoc($submissionResult)['total'];
+}
+
+
+
+// Notices
+$noticeResult = mysqli_query($conn,
+"SELECT COUNT(*) AS total FROM notices");
+
+$totalNotices = 0;
+
+if($noticeResult){
+    $totalNotices = mysqli_fetch_assoc($noticeResult)['total'];
+}
+
+
+
+/*==================================================
+    RECENT NOTICES
+===================================================*/
+
+$recentNotices = mysqli_query($conn,
+
+"SELECT *
+FROM notices
+ORDER BY created_at DESC
+LIMIT 5"
+
+);
+
+
+
+/*==================================================
+    RECENT ACTIVITIES
+===================================================*/
+
+$recentActivities = mysqli_query($conn,
+
+"SELECT
+students.full_name,
+assignments.title,
+submissions.submitted_at,
+submissions.status
+
+FROM submissions
+
+INNER JOIN students
+ON students.id=submissions.student_id
+
+INNER JOIN assignments
+ON assignments.id=submissions.assignment_id
+
+ORDER BY submissions.submitted_at DESC
+
+LIMIT 8"
+
+);
+
+
+
+/*==================================================
+    MONTHLY STUDENT REGISTRATIONS
+===================================================*/
+
+$chartLabels = [];
+$chartData = [];
+
+$chartQuery = mysqli_query($conn,
+
+"SELECT
+MONTHNAME(created_at) AS month,
+COUNT(*) AS total
+
+FROM students
+
+GROUP BY MONTH(created_at)
+
+ORDER BY MONTH(created_at)"
+
+);
+
+while($row=mysqli_fetch_assoc($chartQuery))
+{
+    $chartLabels[]=$row['month'];
+    $chartData[]=$row['total'];
+}
+
+
+
+/*==================================================
+    PIE CHART DATA
+===================================================*/
+
+$pieLabels=[
+    "Students",
+    "Teachers",
+    "Courses",
+    "Assignments"
+];
+
+$pieData=[
+    $totalStudents,
+    $totalTeachers,
+    $totalCourses,
+    $totalAssignments
+];
+
+?>
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<title>Admin Dashboard</title>
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+Admin Dashboard |
+Forces Academy LMS
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+</title>
 
-<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet">
+<!-- Bootstrap -->
 
-<link rel="stylesheet" href="dashboard.css">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
+
+<!-- Font Awesome -->
+
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
+<!-- Google Font -->
+
+<link
+href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+<!-- Animate CSS -->
+
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+<!-- AOS Animation -->
+
+<link
+href="https://unpkg.com/aos@2.3.4/dist/aos.css"
+rel="stylesheet">
+
+<!-- Dashboard CSS -->
+
+<link
+rel="stylesheet"
+href="assets/css/dashboard.css">
+
+<!-- Chart JS -->
+
+<script
+src="https://cdn.jsdelivr.net/npm/chart.js">
+</script>
 
 <style>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+body{
+
+font-family:'Poppins',sans-serif;
+background:#f5f7fb;
+
+}
+
+.loading{
+
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:#fff;
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:99999;
+
+}
+
+.spinner{
+
+width:60px;
+height:60px;
+border-radius:50%;
+border:6px solid #ddd;
+border-top:6px solid #0d6efd;
+animation:spin 1s linear infinite;
+
+}
+
+@keyframes spin{
+
+100%{
+
+transform:rotate(360deg);
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="loading">
+
+<div class="spinner"></div>
+
+</div>
+
+<div class="wrapper">
+<!-- ==============================
+        SIDEBAR
+================================ -->
+
+<aside class="sidebar">
+
+    <div class="logo-area">
+
+        <img src="https://ui-avatars.com/api/?name=Admin&background=0D6EFD&color=fff">">
+
+        <h3>Forces Academy</h3>
+
+        <span>LMS Admin</span>
+
+    </div>
+
+
+    <ul class="sidebar-menu">
+
+        <li class="active">
+            <a href="dashboard.php">
+                <i class="fas fa-home"></i>
+                Dashboard
+            </a>
+        </li>
+
+        <li>
+            <a href="manage_students.php">
+                <i class="fas fa-user-graduate"></i>
+                Students
+            </a>
+        </li>
+
+        <li>
+            <a href="manage_teachers.php">
+                <i class="fas fa-chalkboard-teacher"></i>
+                Teachers
+            </a>
+        </li>
+
+        <li>
+            <a href="manage_courses.php">
+                <i class="fas fa-book-open"></i>
+                Courses
+            </a>
+        </li>
+
+        <li>
+            <a href="manage_assignments.php">
+                <i class="fas fa-file-alt"></i>
+                Assignments
+            </a>
+        </li>
+
+        <li>
+            <a href="manage_submissions.php">
+                <i class="fas fa-upload"></i>
+                Submissions
+            </a>
+        </li>
+
+        <li>
+            <a href="manage_notices.php">
+                <i class="fas fa-bullhorn"></i>
+                Notices
+            </a>
+        </li>
+
+        <li>
+            <a href="reports.php">
+                <i class="fas fa-chart-bar"></i>
+                Reports
+            </a>
+        </li>
+
+        <li>
+            <a href="settings.php">
+                <i class="fas fa-cog"></i>
+                Settings
+            </a>
+        </li>
+
+    </ul>
+
+    <div class="logout-area">
+
+        <a href="logout.php" class="btn btn-danger w-100">
+
+            <i class="fas fa-sign-out-alt"></i>
+
+            Logout
+
+        </a>
+
+    </div>
+
+</aside>
+
+
+
+<!-- ==============================
+        MAIN CONTENT
+================================ -->
+
+<div class="main-content">
+
+
+
+
+<!-- ==============================
+        TOP NAVBAR
+================================ -->
+
+<nav class="navbar navbar-expand-lg dashboard-navbar">
+
+<div class="container-fluid">
+
+<button class="btn menu-toggle">
+
+<i class="fas fa-bars"></i>
+
+</button>
+
+
+
+<form class="search-box">
+
+<div class="input-group">
+
+<span class="input-group-text">
+
+<i class="fas fa-search"></i>
+
+</span>
+
+<input
+type="text"
+class="form-control"
+placeholder="Search anything...">
+
+</div>
+
+</form>
+
+
+
+
+<ul class="navbar-nav ms-auto align-items-center">
+
+
+<li class="nav-item me-4">
+
+<a href="#">
+
+<i class="far fa-bell fa-lg"></i>
+
+<span class="badge bg-danger">
+
+<?php echo $totalNotices; ?>
+
+</span>
+
+</a>
+
+</li>
+
+
+
+
+<li class="nav-item me-4">
+
+<a href="#">
+
+<i class="far fa-envelope fa-lg"></i>
+
+<span class="badge bg-primary">
+
+3
+
+</span>
+
+</a>
+
+</li>
+
+
+
+
+<li class="nav-item dropdown">
+
+<a
+
+class="nav-link dropdown-toggle"
+
+data-bs-toggle="dropdown"
+
+href="#">
+
+<img
+
+src="assets/images/avatar.png"
+
+class="admin-avatar">
+
+<?php echo $admin_name; ?>
+
+</a>
+
+<ul class="dropdown-menu dropdown-menu-end">
+
+<li>
+
+<a class="dropdown-item"
+
+href="profile.php">
+
+<i class="fas fa-user me-2"></i>
+
+My Profile
+
+</a>
+
+</li>
+
+<li>
+
+<a class="dropdown-item"
+
+href="settings.php">
+
+<i class="fas fa-cog me-2"></i>
+
+Settings
+
+</a>
+
+</li>
+
+<li><hr></li>
+
+<li>
+
+<a
+
+class="dropdown-item text-danger"
+
+href="logout.php">
+
+<i class="fas fa-sign-out-alt me-2"></i>
+
+Logout
+
+</a>
+
+</li>
+
+</ul>
+
+</li>
+
+</ul>
+
+</div>
+
+</nav>
+
+
+
+
+<!-- ==============================
+        HERO SECTION
+================================ -->
+
+<div class="container-fluid">
+
+<div
+
+class="hero-banner"
+
+data-aos="fade-up">
+
+<div class="row align-items-center">
+
+<div class="col-lg-8">
+
+<h2>
+
+Welcome Back,
+
+<?php echo $admin_name; ?> 👋
+
+</h2>
+
+<p>
+
+Manage students, teachers, courses, assignments,
+reports and notices from one powerful dashboard.
+
+</p>
+
+<div class="mt-4">
+
+<a
+
+href="manage_students.php"
+
+class="btn btn-primary btn-lg">
+
+Manage Students
+
+</a>
+
+<a
+
+href="manage_courses.php"
+
+class="btn btn-light btn-lg ms-3">
+
+Courses
+
+</a>
+
+</div>
+
+</div>
+
+<div class="col-lg-4 text-center">
+
+<img
+
+src="assets/images/admin-banner.png"
+
+class="img-fluid banner-image">
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ==========================================
+        DASHBOARD STATISTICS
+===========================================-->
+
+<div class="row mt-4">
+
+    <!-- Students -->
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="dashboard-card bg-primary text-white" data-aos="zoom-in">
+
+            <div class="card-icon">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+
+            <div class="card-info">
+
+                <h6>Total Students</h6>
+
+                <h2 class="counter">
+                    <?php echo $totalStudents; ?>
+                </h2>
+
+                <p>
+                    Registered Students
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Teachers -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="dashboard-card bg-success text-white" data-aos="zoom-in">
+
+            <div class="card-icon">
+
+                <i class="fas fa-chalkboard-teacher"></i>
+
+            </div>
+
+            <div class="card-info">
+
+                <h6>Total Teachers</h6>
+
+                <h2 class="counter">
+
+                    <?php echo $totalTeachers; ?>
+
+                </h2>
+
+                <p>
+
+                    Active Teachers
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+    <!-- Courses -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="dashboard-card bg-warning text-white" data-aos="zoom-in">
+
+            <div class="card-icon">
+
+                <i class="fas fa-book-open"></i>
+
+            </div>
+
+            <div class="card-info">
+
+                <h6>Total Courses</h6>
+
+                <h2 class="counter">
+
+                    <?php echo $totalCourses; ?>
+
+                </h2>
+
+                <p>
+
+                    Available Courses
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+
+    <!-- Assignments -->
+
+    <div class="col-xl-3 col-md-6 mb-4">
+
+        <div class="dashboard-card bg-danger text-white" data-aos="zoom-in">
+
+            <div class="card-icon">
+
+                <i class="fas fa-file-alt"></i>
+
+            </div>
+
+            <div class="card-info">
+
+                <h6>Total Assignments</h6>
+
+                <h2 class="counter">
+
+                    <?php echo $totalAssignments; ?>
+
+                </h2>
+
+                <p>
+
+                    Published Assignments
+
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==========================================
+            QUICK ACTIONS
+===========================================-->
+
+<div class="row mt-3">
+
+<div class="col-lg-12">
+
+<div class="card shadow border-0">
+
+<div class="card-body">
+
+<h4 class="mb-4">
+
+<i class="fas fa-bolt text-warning"></i>
+
+Quick Actions
+
+</h4>
+
+<div class="row g-4">
+
+
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="add_student.php" class="quick-box">
+
+<i class="fas fa-user-plus"></i>
+
+<span>Add Student</span>
+
+</a>
+
+</div>
+
+
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="add_teacher.php" class="quick-box">
+
+<i class="fas fa-user-tie"></i>
+
+<span>Add Teacher</span>
+
+</a>
+
+</div>
+
+
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="add_course.php" class="quick-box">
+
+<i class="fas fa-book"></i>
+
+<span>Add Course</span>
+
+</a>
+
+</div>
+
+
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="add_assignment.php" class="quick-box">
+
+<i class="fas fa-file-circle-plus"></i>
+
+<span>Assignment</span>
+
+</a>
+
+</div>
+
+
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="manage_notices.php" class="quick-box">
+
+<i class="fas fa-bullhorn"></i>
+
+<span>Notice</span>
+
+</a>
+
+</div>
+
+
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="reports.php" class="quick-box">
+
+<i class="fas fa-chart-line"></i>
+
+<span>Reports</span>
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- ==========================================
+        CHART SECTION STARTS
+===========================================-->
+
+<div class="row mt-4">
+
+<div class="col-lg-8">
+
+<div class="card shadow border-0">
+
+<div class="card-header bg-white">
+
+<h5>
+
+Student Registration Overview
+
+</h5>
+
+</div>
+
+<div class="card-body">
+
+<canvas id="studentChart" height="120"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<div class="col-lg-4">
+
+<div class="card shadow border-0">
+
+<div class="card-header bg-white">
+
+<h5>
+
+System Statistics
+
+</h5>
+
+</div>
+
+<div class="card-body">
+
+<canvas id="pieChart"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<!-- ==========================================
+        RECENT NOTICES & RECENT ACTIVITIES
+========================================== -->
+
+<div class="row mt-4">
+
+    <!-- Recent Notices -->
+
+    <div class="col-lg-4">
+
+        <div class="card shadow-lg border-0 rounded-4">
+
+            <div class="card-header bg-primary text-white">
+
+                <h5 class="mb-0">
+                    <i class="fas fa-bullhorn me-2"></i>
+                    Recent Notices
+                </h5>
+
+            </div>
+
+            <div class="card-body p-0">
+
+                <?php if(mysqli_num_rows($recentNotices)>0){ ?>
+
+                    <ul class="list-group list-group-flush">
+
+                        <?php while($notice=mysqli_fetch_assoc($recentNotices)){ ?>
+
+                        <li class="list-group-item">
+
+                            <h6 class="fw-bold mb-1">
+
+                                <?php echo htmlspecialchars($notice['title']); ?>
+
+                            </h6>
+
+                            <small class="text-muted">
+
+                                <?php echo date("d M Y",
+                                strtotime($notice['created_at'])); ?>
+
+                            </small>
+
+                            <p class="mt-2 mb-0">
+
+                                <?php echo substr(strip_tags($notice['title']),0,80); ?>
+
+                                ...
+
+                            </p>
+
+                        </li>
+
+                        <?php } ?>
+
+                    </ul>
+
+                <?php }else{ ?>
+
+                    <div class="p-4 text-center">
+
+                        <img src="assets/images/empty.png"
+                             width="120">
+
+                        <p class="text-muted mt-3">
+
+                            No notices available.
+
+                        </p>
+
+                    </div>
+
+                <?php } ?>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- Recent Activities -->
+
+    <div class="col-lg-8">
+
+        <div class="card shadow-lg border-0 rounded-4">
+
+            <div class="card-header bg-success text-white">
+
+                <h5 class="mb-0">
+
+                    <i class="fas fa-clock me-2"></i>
+
+                    Recent Assignment Activity
+
+                </h5>
+
+            </div>
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle mb-0">
+
+                    <thead class="table-light">
+
+                        <tr>
+
+                            <th>Student</th>
+
+                            <th>Assignment</th>
+
+                            <th>Date</th>
+
+                            <th>Status</th>
+
+                        </tr>
+
+                    </thead>
+
+                    <tbody>
+
+                    <?php while($activity=mysqli_fetch_assoc($recentActivities)){ ?>
+
+                        <tr>
+
+                            <td>
+
+                                <?php echo htmlspecialchars($activity['full_name']); ?>
+
+                            </td>
+
+                            <td>
+
+                                <?php echo htmlspecialchars($activity['title']); ?>
+
+                            </td>
+
+                            <td>
+
+                                <?php echo date("d M Y",
+                                strtotime($activity['submitted_at'])); ?>
+
+                            </td>
+
+                            <td>
+
+                            <?php
+
+                            if($activity['status']=="graded"){
+
+                                echo '<span class="badge bg-success">Graded</span>';
+
+                            }else{
+
+                                echo '<span class="badge bg-warning text-dark">Submitted</span>';
+
+                            }
+
+                            ?>
+
+                            </td>
+
+                        </tr>
+
+                    <?php } ?>
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- ==========================================
+        FOOTER
+========================================== -->
+
+<footer class="mt-5 mb-3 text-center">
+
+    <small class="text-muted">
+
+        © <?php echo date("Y"); ?>
+
+        Forces Academy LMS |
+
+        Admin Dashboard
+
+    </small>
+
+</footer>
+
+</div>
+
+<!-- End Main Content -->
+
+</div>
+
+
+
+
+
+<!-- ==========================================
+        JAVASCRIPT
+========================================== -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 
 <script>
 
-const ctx=document.getElementById("dashboardChart");
+AOS.init({
 
-new Chart(ctx,{
+duration:800,
 
-type:"bar",
+once:true
+
+});
+
+
+// Hide Loader
+
+window.addEventListener("load",function(){
+
+document.querySelector(".loading").style.display="none";
+
+});
+
+
+
+// Student Registration Chart
+
+const studentChart = document.getElementById("studentChart");
+
+new Chart(studentChart,{
+
+type:'line',
 
 data:{
 
-labels:["Students","Courses","Assignments","Submissions"],
+labels:<?php echo json_encode($chartLabels); ?>,
 
 datasets:[{
 
-label:"Academy Statistics",
+label:'Students',
 
-data:[
+data:<?php echo json_encode($chartData); ?>,
 
-<?php echo $totalStudents; ?>,
+borderColor:'#0d6efd',
 
-<?php echo $totalCourses; ?>,
+backgroundColor:'rgba(13,110,253,.2)',
 
-<?php echo $totalAssignments; ?>,
+fill:true,
 
-<?php echo $totalSubmissions; ?>
-
-],
-
-backgroundColor:[
-
-"#2563eb",
-
-"#16a34a",
-
-"#f97316",
-
-"#7c3aed"
-
-],
-
-borderRadius:12
+tension:.4
 
 }]
 
@@ -115,992 +1263,88 @@ display:false
 
 });
 
-</script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
 
-<script>
+// Pie Chart
 
-AOS.init({
+const pieChart=document.getElementById("pieChart");
 
-duration:1000,
+new Chart(pieChart,{
 
-once:true
+type:'doughnut',
+
+data:{
+
+labels:<?php echo json_encode($pieLabels); ?>,
+
+datasets:[{
+
+data:<?php echo json_encode($pieData); ?>,
+
+backgroundColor:[
+
+"#0d6efd",
+
+"#198754",
+
+"#ffc107",
+
+"#dc3545"
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true
+
+}
 
 });
 
 
-function updateClock(){
 
-const now=new Date();
 
-document.getElementById("todayDate").innerHTML=now.toDateString();
+// Counter Animation
 
-document.getElementById("liveClock").innerHTML=now.toLocaleTimeString();
+const counters=document.querySelectorAll(".counter");
+
+counters.forEach(counter=>{
+
+const target=+counter.innerText;
+
+let count=0;
+
+const update=()=>{
+
+const increment=Math.ceil(target/60);
+
+count+=increment;
+
+if(count<target){
+
+counter.innerText=count;
+
+requestAnimationFrame(update);
+
+}else{
+
+counter.innerText=target;
 
 }
 
-setInterval(updateClock,1000);
-
-updateClock();
-
-// Dark Mode
-
-document.getElementById("darkModeBtn").onclick=function(){
-
-document.body.classList.toggle("dark-mode");
-
 };
+
+update();
+
+});
 
 </script>
 
 </body>
 
 </html>
-
-
-body{
-
-background:#f5f7fb;
-
-}
-
-.hero{
-
-background:linear-gradient(135deg,#0d6efd,#198754);
-
-padding:45px;
-
-border-radius:25px;
-
-color:white;
-
-margin-bottom:35px;
-
-position:relative;
-
-overflow:hidden;
-
-}
-
-.hero img{
-
-width:300px;
-
-position:absolute;
-
-right:20px;
-
-bottom:0;
-
-}
-
-.stats-card{
-
-border:none;
-
-border-radius:20px;
-
-padding:25px;
-
-color:white;
-
-transition:.3s;
-
-box-shadow:0 10px 25px rgba(0,0,0,.12);
-
-}
-
-.stats-card:hover{
-
-transform:translateY(-8px);
-
-}
-
-.blue{
-
-background:linear-gradient(135deg,#2563eb,#1d4ed8);
-
-}
-
-.green{
-
-background:linear-gradient(135deg,#16a34a,#15803d);
-
-}
-
-.orange{
-
-background:linear-gradient(135deg,#f97316,#ea580c);
-
-}
-
-.purple{
-
-background:linear-gradient(135deg,#7c3aed,#6d28d9);
-
-}
-
-.stats-card i{
-
-font-size:50px;
-
-opacity:.8;
-
-}
-
-.quick-card{
-
-border-radius:18px;
-
-transition:.3s;
-
-}
-
-.quick-card:hover{
-
-transform:translateY(-5px);
-
-}
-
-</style>
-
-</head>
-
-<body>
-
-<?php include("sidebar.php"); ?>
-
-<div class="main-content">
-
-<?php include("navbar.php"); ?>
-
-<div class="container-fluid">
-
-<div class="hero">
-
-<div class="row align-items-center">
-
-<div class="col-lg-7">
-
-<h2>
-
-<?php echo $greeting; ?> Admin 👋
-
-</h2>
-
-<p class="mt-3">
-
-Welcome to the Forces Academy Learning Management System.
-
-Manage your academy from one professional dashboard.
-
-</p>
-
-<a href="manage_students.php"
-
-class="btn btn-light btn-lg">
-
-Manage Students
-
-</a>
-
-</div>
-
-<div class="col-lg-5 text-end">
-
-<img src="https://cdn-icons-png.flaticon.com/512/2206/2206368.png">
-
-</div>
-
-</div>
-
-</div>
-
-<div class="row">
-
-<div class="col-md-3 mb-4">
-
-<div class="stats-card blue">
-
-<div class="d-flex justify-content-between">
-
-<div>
-
-<h6>Total Students</h6>
-
-<h2><?php echo $totalStudents; ?></h2>
-
-</div>
-
-<i class="fas fa-user-graduate"></i>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-3 mb-4">
-
-<div class="stats-card green">
-
-<div class="d-flex justify-content-between">
-
-<div>
-
-<h6>Courses</h6>
-
-<h2><?php echo $totalCourses; ?></h2>
-
-</div>
-
-<i class="fas fa-book"></i>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-3 mb-4">
-
-<div class="stats-card orange">
-
-<div class="d-flex justify-content-between">
-
-<div>
-
-<h6>Assignments</h6>
-
-<h2><?php echo $totalAssignments; ?></h2>
-
-</div>
-
-<i class="fas fa-file-alt"></i>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-md-3 mb-4">
-
-<div class="stats-card purple">
-
-<div class="d-flex justify-content-between">
-
-<div>
-
-<h6>Submissions</h6>
-
-<h2><?php echo $totalSubmissions; ?></h2>
-
-</div>
-
-<i class="fas fa-upload"></i>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- Quick Actions -->
-
-<div class="row">
-
-<div class="col-lg-3 mb-4">
-
-<a href="manage_students.php" class="text-decoration-none">
-
-<div class="card quick-card shadow border-0">
-
-<div class="card-body text-center">
-
-<i class="fas fa-users fa-3x text-primary mb-3"></i>
-
-<h5>Manage Students</h5>
-
-</div>
-
-</div>
-
-</a>
-
-</div>
-
-<div class="col-lg-3 mb-4">
-
-<a href="manage_courses.php" class="text-decoration-none">
-
-<div class="card quick-card shadow border-0">
-
-<div class="card-body text-center">
-
-<i class="fas fa-book fa-3x text-success mb-3"></i>
-
-<h5>Manage Courses</h5>
-
-</div>
-
-</div>
-
-</a>
-
-</div>
-
-<div class="col-lg-3 mb-4">
-
-<a href="manage_assignments.php" class="text-decoration-none">
-
-<div class="card quick-card shadow border-0">
-
-<div class="card-body text-center">
-
-<i class="fas fa-file-signature fa-3x text-warning mb-3"></i>
-
-<h5>Assignments</h5>
-
-</div>
-
-</div>
-
-</a>
-
-</div>
-
-<div class="col-lg-3 mb-4">
-
-<a href="manage_submissions.php" class="text-decoration-none">
-
-<div class="card quick-card shadow border-0">
-
-<div class="card-body text-center">
-
-<i class="fas fa-check-circle fa-3x text-danger mb-3"></i>
-
-<h5>Results</h5>
-
-</div>
-
-</div>
-
-</a>
-
-</div>
-
-</div>
-
-<!-- ================= Analytics + Recent Students ================= -->
-
-<div class="row mt-4">
-
-<div class="col-lg-8">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-chart-line text-success"></i>
-
-Academy Analytics
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<canvas id="dashboardChart" height="120"></canvas>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-lg-4">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-user-graduate text-primary"></i>
-
-Recently Registered Students
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<?php
-
-$students=mysqli_query($conn,"
-SELECT *
-FROM students
-ORDER BY id DESC
-LIMIT 5
-");
-
-while($student=mysqli_fetch_assoc($students))
-{
-
-?>
-
-<div class="d-flex align-items-center mb-3">
-
-<img
-
-src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
-
-width="55"
-
-height="55"
-
-class="rounded-circle border border-3 border-success me-3">
-
-<div>
-
-<h6 class="mb-0">
-
-<?php echo $student['full_name']; ?>
-
-</h6>
-
-<small class="text-muted">
-
-<?php echo $student['email']; ?>
-
-</small>
-
-</div>
-
-</div>
-
-<hr>
-
-<?php
-
-}
-
-?>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= Latest Courses ================= -->
-
-<div class="row mt-4">
-
-<div class="col-lg-6">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-book text-success"></i>
-
-Latest Courses
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<?php
-
-$courses=mysqli_query($conn,"
-SELECT *
-FROM courses
-ORDER BY id DESC
-LIMIT 5
-");
-
-while($course=mysqli_fetch_assoc($courses))
-{
-
-?>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-
-<div>
-
-<h6>
-
-<?php echo $course['course_name']; ?>
-
-</h6>
-
-<small class="text-muted">
-
-<?php echo $course['teacher_name']; ?>
-
-</small>
-
-</div>
-
-<span class="badge bg-success">
-
-Active
-
-</span>
-
-</div>
-
-<hr>
-
-<?php
-
-}
-
-?>
-
-<a href="manage_courses.php"
-
-class="btn btn-success w-100">
-
-Manage Courses
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= Recent Assignments ================= -->
-
-<div class="col-lg-6">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-file-alt text-warning"></i>
-
-Latest Assignments
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<?php
-
-$assignments=mysqli_query($conn,"
-SELECT *
-FROM assignments
-ORDER BY id DESC
-LIMIT 5
-");
-
-while($assignment=mysqli_fetch_assoc($assignments))
-{
-
-?>
-
-<div class="d-flex justify-content-between mb-3">
-
-<div>
-
-<h6>
-
-<?php echo $assignment['title']; ?>
-
-</h6>
-
-<small class="text-muted">
-
-Due:
-
-<?php echo date("d M Y",strtotime($assignment['deadline'])); ?>
-
-</small>
-
-</div>
-
-<span class="badge bg-warning">
-
-Pending
-
-</span>
-
-</div>
-
-<hr>
-
-<?php
-
-}
-
-?>
-
-<a href="manage_assignments.php"
-
-class="btn btn-warning w-100">
-
-Manage Assignments
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= Recent Submissions ================= -->
-
-<div class="row mt-4">
-
-<div class="col-lg-12">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-upload text-primary"></i>
-
-Recent Assignment Submissions
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<div class="table-responsive">
-
-<table class="table table-hover align-middle">
-
-<thead class="table-success">
-
-<tr>
-
-<th>Student</th>
-
-<th>Assignment</th>
-
-<th>Status</th>
-
-<th>Date</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-<?php
-
-$submissions=mysqli_query($conn,"
-SELECT
-submissions.*,
-students.full_name,
-assignments.title
-FROM submissions
-INNER JOIN students
-ON submissions.student_id=students.id
-INNER JOIN assignments
-ON submissions.assignment_id=assignments.id
-ORDER BY submissions.id DESC
-LIMIT 5
-");
-
-while($row=mysqli_fetch_assoc($submissions))
-{
-
-?>
-
-<tr>
-
-<td><?php echo $row['full_name']; ?></td>
-
-<td><?php echo $row['title']; ?></td>
-
-<td>
-
-<span class="badge bg-success">
-
-<?php echo ucfirst($row['status']); ?>
-
-</span>
-
-</td>
-
-<td>
-
-<?php echo date("d M Y",strtotime($row['submitted_at'])); ?>
-
-</td>
-
-</tr>
-
-<?php
-
-}
-
-?>
-
-</tbody>
-
-</table>
-
-</div>
-
-<a href="manage_submissions.php"
-
-class="btn btn-primary w-100">
-
-View All Submissions
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= Latest Notices ================= -->
-
-<div class="row mt-4">
-
-<div class="col-lg-6">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-bullhorn text-danger"></i>
-
-Latest Notices
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<?php
-
-$notices=mysqli_query($conn,"
-SELECT *
-FROM notices
-ORDER BY id DESC
-LIMIT 5
-");
-
-if(mysqli_num_rows($notices)>0){
-
-while($notice=mysqli_fetch_assoc($notices))
-{
-
-?>
-
-<div class="mb-3">
-
-<h6><?php echo $notice['title']; ?></h6>
-
-<p class="text-muted">
-
-<?php echo substr($notice['content'],0,80); ?>...
-
-</p>
-<hr>
-
-</div>
-
-<?php
-
-}
-
-}else{
-
-echo "<p class='text-muted'>No notices available.</p>";
-
-}
-
-?>
-
-<a href="manage_notices.php"
-
-class="btn btn-danger w-100">
-
-Manage Notices
-
-</a>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= Top Students ================= -->
-
-<div class="col-lg-6">
-
-<div class="card border-0 shadow-lg rounded-4">
-
-<div class="card-header bg-white border-0">
-
-<h4 class="fw-bold">
-
-<i class="fas fa-trophy text-warning"></i>
-
-Top Performing Students
-
-</h4>
-
-</div>
-
-<div class="card-body">
-
-<?php
-
-$top=mysqli_query($conn,"
-SELECT full_name,email
-FROM students
-ORDER BY id DESC
-LIMIT 5
-");
-
-while($student=mysqli_fetch_assoc($top))
-{
-
-?>
-
-<div class="d-flex align-items-center mb-3">
-
-<img
-
-src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png"
-
-width="50"
-
-class="rounded-circle me-3">
-
-<div>
-
-<h6 class="mb-0">
-
-<?php echo $student['full_name']; ?>
-
-</h6>
-
-<small class="text-muted">
-
-<?php echo $student['email']; ?>
-
-</small>
-
-</div>
-
-<span class="badge bg-warning ms-auto">
-
-⭐
-
-</span>
-
-</div>
-
-<hr>
-
-<?php
-
-}
-
-?>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= Footer ================= -->
-
-<div class="row mt-4">
-
-<div class="col-lg-12">
-
-<div class="card border-0 shadow rounded-4">
-
-<div class="card-body d-flex justify-content-between align-items-center">
-
-<div>
-
-<h5 class="mb-0">
-
-📅 <span id="todayDate"></span>
-
-</h5>
-
-<small class="text-muted">
-
-⏰ <span id="liveClock"></span>
-
-</small>
-
-</div>
-
-<div>
-
-<button
-
-id="darkModeBtn"
-
-class="btn btn-dark">
-
-🌙 Dark Mode
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<?php include("footer.php"); ?>

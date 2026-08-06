@@ -9,253 +9,875 @@ if (!isset($_SESSION['student_id'])) {
 
 include("../config/database.php");
 
-// Total Courses
-$courseQuery = mysqli_query($conn, "SELECT COUNT(*) AS total FROM courses");
-$course = mysqli_fetch_assoc($courseQuery);
+/*=========================================
+    STUDENT INFORMATION
+=========================================*/
+$student_id = $_SESSION['student_id'];
 
-// Total Notices
-$noticeQuery = mysqli_query($conn, "SELECT COUNT(*) AS total FROM notices");
-$notice = mysqli_fetch_assoc($noticeQuery);
+$stmt = mysqli_prepare(
 
-// Latest Notices
-$latestNotice = mysqli_query($conn, "SELECT * FROM notices ORDER BY id DESC LIMIT 3");
+$conn,
+
+"SELECT *
+FROM students
+WHERE id=?
+LIMIT 1"
+
+);
+
+mysqli_stmt_bind_param($stmt,"i",$student_id);
+
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+
+$student = mysqli_fetch_assoc($result);
+
+if(!$student){
+
+session_destroy();
+
+header("Location: login.php");
+
+exit();
+
+}
+
+/*=========================================
+    PROFILE PHOTO
+=========================================*/
+$avatar = !empty($student['photo'])
+
+?
+
+"../uploads/students/".$student['photo']
+
+:
+
+"assets/images/avatar.png";
+
+/*=========================================
+    DASHBOARD COUNTS
+=========================================*/
+
+// Courses
+
+$totalCourses = mysqli_fetch_assoc(
+
+mysqli_query(
+
+$conn,
+
+"SELECT COUNT(*) total FROM courses"
+
+)
+
+)['total'];
+
+// Assignments
+
+$totalAssignments = mysqli_fetch_assoc(
+
+mysqli_query(
+
+$conn,
+
+"SELECT COUNT(*) total FROM assignments"
+
+)
+
+)['total'];
+
+// Notices
+
+$totalNotices = mysqli_fetch_assoc(
+
+mysqli_query(
+
+$conn,
+
+"SELECT COUNT(*) total FROM notices"
+
+)
+
+)['total'];
+
+/*=========================================
+    PERFORMANCE
+=========================================*/
+
+$performance = mysqli_fetch_assoc(
+
+mysqli_query(
+
+$conn,
+
+"
+
+SELECT
+
+ROUND(
+
+AVG((marks/total_marks)*100),
+
+2
+
+)
+
+average
+
+FROM results
+
+WHERE student_id=$student_id
+
+"
+
+)
+
+);
+
+$average = $performance['average'] ?? 0;
+
+/*=========================================
+    GRADE
+=========================================*/
+
+if($average>=90){
+
+$grade="A+";
+
+}elseif($average>=80){
+
+$grade="A";
+
+}elseif($average>=70){
+
+$grade="B";
+
+}elseif($average>=60){
+
+$grade="C";
+
+}elseif($average>=50){
+
+$grade="D";
+
+}else{
+
+$grade="F";
+
+}
+
+/*=========================================
+    RECENT NOTICES
+=========================================*/
+
+$recentNotices = mysqli_query(
+
+$conn,
+
+"
+
+SELECT *
+
+FROM notices
+
+ORDER BY created_at DESC
+
+LIMIT 5
+
+"
+
+);
+
+/*=========================================
+    RECENT ASSIGNMENTS
+=========================================*/
+
+$recentAssignments = mysqli_query(
+
+$conn,
+
+"
+
+SELECT *
+
+FROM assignments
+
+ORDER BY deadline ASC
+
+LIMIT 5
+
+"
+
+);
+
 ?>
+<?php include "sidebar.php"; ?>
+
+<?php include "navbar.php"; ?>
 
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
 
 <meta charset="UTF-8">
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1">
 
-<title>Student Dashboard</title>
+<title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+Student Dashboard
 
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
+</title>
 
-<link rel="stylesheet" href="../css/dashboard.css">
+<link
+href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+rel="stylesheet">
+
+<link
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+rel="stylesheet">
+
+<link
+href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<link
+rel="stylesheet"
+href="assets/css/dashboard.css">
+
+<style>
+
+body{
+    margin:0;
+    font-family:'Poppins',sans-serif;
+    background:#f4f7fb;
+}
+
+
+.dashboard-container{
+
+margin-left:250px;
+padding:100px 30px 30px;
+}
+
+.hero-card{
+
+background:linear-gradient(135deg,#2563eb,#3b82f6);
+
+border-radius:25px;
+
+padding:35px;
+
+color:white;
+
+box-shadow:0 15px 35px rgba(37,99,235,.25);
+
+overflow:hidden;
+
+position:relative;
+
+}
+
+.hero-card::before{
+
+content:'';
+
+position:absolute;
+
+width:250px;
+
+height:250px;
+
+background:rgba(255,255,255,.08);
+
+border-radius:50%;
+
+right:-70px;
+
+top:-70px;
+
+}
+
+.hero-avatar{
+
+width:100px;
+
+height:100px;
+
+border-radius:50%;
+
+border:5px solid rgba(255,255,255,.35);
+
+object-fit:cover;
+
+}
+
+.stat-card{
+
+border:none;
+
+border-radius:20px;
+
+color:white;
+
+transition:.35s;
+
+overflow:hidden;
+
+}
+
+.stat-card:hover{
+
+transform:translateY(-8px);
+
+}
+
+/* SIDEBAR */
+
+.sidebar{
+
+position:fixed;
+left:0;
+top:0;
+
+width:250px;
+height:100vh;
+
+background:#0d6efd;
+
+color:white;
+
+padding:20px;
+
+z-index:1000;
+
+}
+
+
+.logo{
+
+text-align:center;
+margin-bottom:35px;
+
+}
+
+
+.logo h3{
+
+margin:0;
+font-size:22px;
+
+}
+
+
+.logo small{
+
+opacity:.8;
+
+}
+
+
+
+.menu{
+
+list-style:none;
+padding:0;
+
+}
+
+
+.menu li{
+
+margin:12px 0;
+
+}
+
+
+.menu li a{
+
+display:flex;
+align-items:center;
+
+gap:15px;
+
+color:white;
+
+text-decoration:none;
+
+padding:13px 15px;
+
+border-radius:10px;
+
+transition:.3s;
+
+}
+
+
+.menu li a:hover,
+.menu .active a{
+
+background:white;
+color:#0d6efd;
+
+}
+
+
+
+/* NAVBAR */
+
+
+.top-navbar{
+
+position:fixed;
+
+left:250px;
+right:0;
+
+height:70px;
+
+background:white;
+
+display:flex;
+
+align-items:center;
+
+justify-content:space-between;
+
+padding:0 30px;
+
+box-shadow:0 3px 10px rgba(0,0,0,.08);
+
+z-index:999;
+
+
+}
+
+
+.nav-left{
+
+display:flex;
+align-items:center;
+gap:20px;
+
+}
+
+
+#sidebarToggle{
+
+border:none;
+background:#0d6efd;
+color:white;
+
+width:40px;
+height:40px;
+
+border-radius:8px;
+
+}
+
+
+
+.nav-right{
+
+display:flex;
+
+align-items:center;
+
+gap:25px;
+
+}
+
+
+
+.notification{
+
+position:relative;
+
+font-size:22px;
+
+}
+
+
+.notification span{
+
+position:absolute;
+
+top:-8px;
+right:-10px;
+
+background:red;
+
+color:white;
+
+font-size:11px;
+
+padding:3px 7px;
+
+border-radius:50%;
+
+}
+
+
+
+.student-profile{
+
+display:flex;
+
+align-items:center;
+
+gap:12px;
+
+}
+
+
+.student-profile img{
+
+width:45px;
+height:45px;
+
+border-radius:50%;
+
+}
+
+
+
+.student-profile small{
+
+display:block;
+
+color:#777;
+
+}
+
+
+
+
+/* MAIN AREA */
+
+
+.main-content{
+
+margin-left:250px;
+
+padding:75px 25px 30px;
+
+
+}
+
+
+/* RESPONSIVE */
+
+
+@media(max-width:900px){
+
+
+.sidebar{
+
+left:-250px;
+
+}
+
+
+.top-navbar{
+
+left:0;
+
+}
+
+
+.main-content{
+
+margin-left:0;
+
+}
+
+
+
+.sidebar.active{
+
+left:0;
+
+}
+
+}
+</style>
 
 </head>
 
 <body>
+ 
+<div class="dashboard-container">
+    
+<!-- ==========================================
+        WELCOME HERO
+========================================== -->
 
-<?php include("sidebar.php"); ?>
+<div class="hero-card mb-4">
 
-<div class="main-content">
-
-<?php include("navbar.php"); ?>
-
-<div class="container-fluid py-4">
-
-<div class="welcome-banner">
-
-<div>
-
-<h2>Welcome Back 👋</h2>
-
-<h4><?php echo $_SESSION['student_name']; ?></h4>
-
-<p>Have a productive learning day.</p>
-
-</div>
-
-<div>
-    <?php
-
-if($_SESSION['student_gender']=="Female")
-{
-    $avatar="https://cdn-icons-png.flaticon.com/512/6997/6997662.png";
-}
-else
-{
-    $avatar="https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-}
-
-?>
-
-<img
-src="<?php echo $avatar; ?>"
-width="120"
-class="rounded-circle shadow">
-
-</div>
-
-</div>
-
-<div class="row mt-4">
-
-<div class="col-lg-3">
-
-<div class="dashboard-card green">
-
-<i class="fa-solid fa-book-open"></i>
-
-<h2><?php echo $course['total']; ?></h2>
-
-<p>Total Courses</p>
-
-</div>
-
-</div>
-
-<div class="col-lg-3">
-
-<div class="dashboard-card yellow">
-
-<i class="fa-solid fa-file-lines"></i>
-
-<h2>0</h2>
-
-<p>Assignments</p>
-
-</div>
-
-</div>
-
-<div class="col-lg-3">
-
-<div class="dashboard-card red">
-
-<i class="fa-solid fa-bullhorn"></i>
-
-<h2><?php echo $notice['total']; ?></h2>
-
-<p>Notices</p>
-
-</div>
-
-</div>
-
-<div class="col-lg-3">
-
-<div class="dashboard-card blue">
-
-<i class="fa-solid fa-award"></i>
-
-<h2>A+</h2>
-
-<p>Performance</p>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="row mt-4">
+<div class="row align-items-center">
 
 <div class="col-lg-8">
 
-<div class="card shadow border-0">
+<span class="badge bg-light text-primary px-3 py-2 mb-3">
 
-<div class="card-header bg-primary text-white">
+<i class="fas fa-graduation-cap me-2"></i>
 
-<h4>Recent Notices</h4>
+Student Dashboard
+
+</span>
+
+<h1 class="fw-bold mb-3">
+
+Welcome Back,
+
+<?php echo htmlspecialchars($student['full_name']); ?>
+
+👋
+
+</h1>
+
+<p class="mb-4 fs-5">
+
+Continue your learning journey and stay updated with your assignments,
+courses and academic progress.
+
+</p>
+
+<div class="d-flex flex-wrap gap-3">
+
+<a href="courses.php" class="btn btn-light btn-lg">
+
+<i class="fas fa-book-open me-2"></i>
+
+My Courses
+
+</a>
+
+<a href="results.php" class="btn btn-outline-light btn-lg">
+
+<i class="fas fa-chart-line me-2"></i>
+
+View Results
+
+</a>
+
+<a href="assignments.php" class="btn btn-outline-light btn-lg">
+
+<i class="fas fa-file-upload me-2"></i>
+
+Assignments
+
+</a>
 
 </div>
+
+</div>
+
+<div class="col-lg-4 text-center">
+
+<img
+
+src="<?php echo $avatar; ?>"
+
+class="hero-avatar shadow-lg">
+
+<h4 class="mt-3">
+
+<?php echo htmlspecialchars($student['full_name']); ?>
+
+</h4>
+
+<p>
+
+<?php echo htmlspecialchars($student['email']); ?>
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ==========================================
+        DASHBOARD CARDS
+========================================== -->
+
+<div class="row g-4 mb-4">
+
+<div class="col-lg-3 col-md-6">
+
+<div class="card stat-card shadow bg-primary">
 
 <div class="card-body">
 
-<?php
+<div class="d-flex justify-content-between">
 
-while($row=mysqli_fetch_assoc($latestNotice)){
+<div>
 
-?>
+<h6>
 
-<div class="notice-box">
+Total Courses
 
-<h5>
+</h6>
 
-<i class="fa-solid fa-bullhorn"></i>
+<h2 class="fw-bold">
 
-<?php echo $row['title']; ?>
+<?php echo $totalCourses; ?>
 
-</h5>
+</h2>
 
-<p>
+<p class="mb-0">
 
-<?php echo $row['content']; ?>
-
-</p>
-
-<small>
-
-Posted By
-
-<b><?php echo $row['posted_by']; ?></b>
-
-|
-
-<?php echo date("d M Y",strtotime($row['created_at'])); ?>
-
-</small>
-
-</div>
-
-<?php
-
-}
-
-?>
-
-</div>
-
-</div>
-
-</div>
-
-<div class="col-lg-4">
-
-<div class="card shadow border-0">
-
-<div class="card-body text-center">
-
-<?php
-
-if($_SESSION['student_gender']=="Female")
-{
-    $avatar="https://cdn-icons-png.flaticon.com/512/6997/6997662.png";
-}
-else
-{
-    $avatar="https://cdn-icons-png.flaticon.com/512/3135/3135715.png";
-}
-
-?>
-
-<img
-src="<?php echo $avatar; ?>"
-width="120"
-class="rounded-circle shadow">
-
-<h3 class="mt-3">
-
-<?php echo $_SESSION['student_name']; ?>
-
-</h3>
-
-<p>
-
-<?php echo $_SESSION['student_email']; ?>
+Enrolled Courses
 
 </p>
 
-<hr>
+</div>
 
-<p><b>Status:</b> Active Student</p>
+<div>
 
-<p><b>Class:</b> BSIT</p>
+<i class="fas fa-book fa-3x opacity-75"></i>
 
-<div class="progress">
+</div>
 
-<div class="progress-bar bg-success"
+</div>
 
-style="width:80%">
+</div>
 
-80%
+</div>
+
+</div>
+
+<div class="col-lg-3 col-md-6">
+
+<div class="card stat-card shadow bg-warning">
+
+<div class="card-body">
+
+<div class="d-flex justify-content-between">
+
+<div>
+
+<h6>
+
+Assignments
+
+</h6>
+
+<h2 class="fw-bold">
+
+<?php echo $totalAssignments; ?>
+
+</h2>
+
+<p class="mb-0">
+
+Available Tasks
+
+</p>
+
+</div>
+
+<div>
+
+<i class="fas fa-file-alt fa-3x opacity-75"></i>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3 col-md-6">
+
+<div class="card stat-card shadow bg-danger">
+
+<div class="card-body">
+
+<div class="d-flex justify-content-between">
+
+<div>
+
+<h6>
+
+Notices
+
+</h6>
+
+<h2 class="fw-bold">
+
+<?php echo $totalNotices; ?>
+
+</h2>
+
+<p class="mb-0">
+
+Latest Updates
+
+</p>
+
+</div>
+
+<div>
+
+<i class="fas fa-bullhorn fa-3x opacity-75"></i>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-3 col-md-6">
+
+<div class="card stat-card shadow bg-success">
+
+<div class="card-body">
+
+<div class="d-flex justify-content-between">
+
+<div>
+
+<h6>
+
+Performance
+
+</h6>
+
+<h2 class="fw-bold">
+
+<?php echo $grade; ?>
+
+</h2>
+
+<p class="mb-0">
+
+Average <?php echo $average; ?>%
+
+</p>
+
+</div>
+
+<div>
+
+<i class="fas fa-award fa-3x opacity-75"></i>
 
 </div>
 
@@ -269,15 +891,17 @@ style="width:80%">
 
 </div>
 
-<div class="row mt-4">
+<!-- ==========================================
+        QUICK ACTIONS
+========================================== -->
 
-<div class="col-lg-12">
+<div class="card shadow border-0 rounded-4 mb-4">
 
-<div class="card shadow border-0">
-
-<div class="card-header bg-success text-white">
+<div class="card-header bg-white border-0 pt-4">
 
 <h4>
+
+<i class="fas fa-bolt text-warning me-2"></i>
 
 Quick Actions
 
@@ -287,67 +911,438 @@ Quick Actions
 
 <div class="card-body">
 
+<div class="row text-center g-4">
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="courses.php" class="text-decoration-none text-dark">
+
+<div class="p-4 rounded-4 bg-light shadow-sm">
+
+<i class="fas fa-book fa-2x text-primary mb-3"></i>
+
+<h6>Courses</h6>
+
+</div>
+
+</a>
+
+</div>
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="assignments.php" class="text-decoration-none text-dark">
+
+<div class="p-4 rounded-4 bg-light shadow-sm">
+
+<i class="fas fa-file-upload fa-2x text-warning mb-3"></i>
+
+<h6>Assignments</h6>
+
+</div>
+
+</a>
+
+</div>
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="results.php" class="text-decoration-none text-dark">
+
+<div class="p-4 rounded-4 bg-light shadow-sm">
+
+<i class="fas fa-chart-line fa-2x text-success mb-3"></i>
+
+<h6>Results</h6>
+
+</div>
+
+</a>
+
+</div>
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="notices.php" class="text-decoration-none text-dark">
+
+<div class="p-4 rounded-4 bg-light shadow-sm">
+
+<i class="fas fa-bullhorn fa-2x text-danger mb-3"></i>
+
+<h6>Notices</h6>
+
+</div>
+
+</a>
+
+</div>
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="profile.php" class="text-decoration-none text-dark">
+
+<div class="p-4 rounded-4 bg-light shadow-sm">
+
+<i class="fas fa-user-circle fa-2x text-info mb-3"></i>
+
+<h6>Profile</h6>
+
+</div>
+
+</a>
+
+</div>
+
+<div class="col-lg-2 col-md-4 col-6">
+
+<a href="logout.php" class="text-decoration-none text-dark">
+
+<div class="p-4 rounded-4 bg-light shadow-sm">
+
+<i class="fas fa-sign-out-alt fa-2x text-secondary mb-3"></i>
+
+<h6>Logout</h6>
+
+</div>
+
+</a>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+<!-- ==========================================
+        MAIN CONTENT
+========================================== -->
+
 <div class="row">
 
-<div class="col-md-3 mb-3">
+<!-- Recent Notices -->
 
-<a href="courses.php" class="action-card text-decoration-none">
+<div class="col-lg-8">
 
-<i class="fas fa-book"></i>
+<div class="card border-0 shadow rounded-4 mb-4">
 
-<h5>Courses</h5>
+<div class="card-header bg-primary text-white rounded-top-4">
 
-<p>View all available courses</p>
+<h5 class="mb-0">
+
+<i class="fas fa-bullhorn me-2"></i>
+
+Recent Notices
+
+</h5>
+
+</div>
+
+<div class="card-body">
+
+<?php
+
+if(mysqli_num_rows($recentNotices)>0){
+
+while($notice=mysqli_fetch_assoc($recentNotices)){
+
+?>
+
+<div class="border-start border-5 border-primary rounded p-3 mb-3 bg-light">
+
+<div class="d-flex justify-content-between">
+
+<h6 class="fw-bold">
+
+<?php echo htmlspecialchars($notice['title']); ?>
+
+</h6>
+
+<small class="text-muted">
+
+<?php echo date("d M Y",strtotime($notice['created_at'])); ?>
+
+</small>
+
+</div>
+
+<p class="mb-1 text-muted">
+
+<?php echo substr(strip_tags($notice['content']),0,180); ?>...
+
+</p>
+
+<small class="text-secondary">
+
+Posted By:
+
+<?php echo htmlspecialchars($notice['posted_by']); ?>
+
+</small>
+
+</div>
+
+<?php
+
+}
+
+}else{
+
+?>
+
+<div class="alert alert-info">
+
+No notices available.
+
+</div>
+
+<?php } ?>
+
+</div>
+
+</div>
+
+<!-- Upcoming Assignments -->
+
+<div class="card border-0 shadow rounded-4">
+
+<div class="card-header bg-warning text-dark">
+
+<h5 class="mb-0">
+
+<i class="fas fa-file-alt me-2"></i>
+
+Upcoming Assignments
+
+</h5>
+
+</div>
+
+<div class="card-body">
+
+<?php
+
+if(mysqli_num_rows($recentAssignments)>0){
+
+while($assignment=mysqli_fetch_assoc($recentAssignments)){
+
+?>
+
+<div class="d-flex justify-content-between align-items-center border-bottom py-3">
+
+<div>
+
+<h6 class="mb-1">
+
+<?php echo htmlspecialchars($assignment['title']); ?>
+
+</h6>
+
+<small class="text-muted">
+
+Due:
+
+<?php echo date("d M Y",strtotime($assignment['deadline'])); ?>
+
+</small>
+
+</div>
+
+<span class="badge bg-danger">
+
+Pending
+
+</span>
+
+</div>
+
+<?php
+
+}
+
+}else{
+
+?>
+
+<div class="alert alert-success">
+
+No assignments available.
+
+</div>
+
+<?php } ?>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- Right Sidebar -->
+
+<div class="col-lg-4">
+
+<!-- Student Profile -->
+
+<div class="card border-0 shadow rounded-4 mb-4">
+
+<div class="card-body text-center">
+
+<img
+
+src="<?php echo $avatar; ?>"
+
+class="rounded-circle shadow"
+
+width="120"
+
+height="120"
+
+style="object-fit:cover;">
+
+<h4 class="mt-3">
+
+<?php echo htmlspecialchars($student['full_name']); ?>
+
+</h4>
+
+<p class="text-muted">
+
+<?php echo htmlspecialchars($student['email']); ?>
+
+</p>
+
+<hr>
+
+<div class="row text-center">
+
+<div class="col-6">
+
+<h6>Class</h6>
+
+<strong>
+
+<?php echo htmlspecialchars($student['class']); ?>
+
+</strong>
+
+</div>
+
+<div class="col-6">
+
+<h6>Grade</h6>
+
+<strong class="text-success">
+
+<?php echo $grade; ?>
+
+</strong>
+
+</div>
+
+</div>
+
+<a
+
+href="profile.php"
+
+class="btn btn-primary w-100 mt-4">
+
+<i class="fas fa-user-edit me-2"></i>
+
+View Profile
 
 </a>
 
 </div>
 
-<div class="col-md-3 mb-3">
+</div>
 
-<a href="assignments.php" class="action-card text-decoration-none">
+<!-- Learning Progress -->
 
-<i class="fas fa-file-alt"></i>
+<div class="card border-0 shadow rounded-4">
 
-<h5>Assignments</h5>
+<div class="card-header bg-success text-white">
 
-<p>Submit your work</p>
+<h5 class="mb-0">
 
-</a>
+<i class="fas fa-chart-line me-2"></i>
+
+Learning Progress
+
+</h5>
 
 </div>
 
-<div class="col-md-3 mb-3">
+<div class="card-body">
 
-<a href="results.php" class="action-card text-decoration-none">
+<p class="mb-1">
 
-<i class="fas fa-chart-line"></i>
+Courses Completed
 
-<h5>Results</h5>
+</p>
 
-<p>View your grades</p>
+<div class="progress mb-3" style="height:10px;">
 
-</a>
+<div
 
-</div>
+class="progress-bar bg-primary"
 
-<div class="col-md-3 mb-3">
-
-<a href="notices.php" class="action-card text-decoration-none">
-
-<i class="fas fa-bullhorn"></i>
-
-<h5>Notice Board</h5>
-
-<p>Latest announcements</p>
-
-</a>
+style="width:85%">
 
 </div>
 
 </div>
 
+<p class="mb-1">
+
+Assignments Submitted
+
+</p>
+
+<div class="progress mb-3" style="height:10px;">
+
+<div
+
+class="progress-bar bg-warning"
+
+style="width:70%">
+
 </div>
+
+</div>
+
+<p class="mb-1">
+
+Attendance
+
+</p>
+
+<div class="progress mb-3" style="height:10px;">
+
+<div
+
+class="progress-bar bg-success"
+
+style="width:92%">
+
+</div>
+
+</div>
+
+<p class="mb-1">
+
+Overall Performance
+
+</p>
+
+<div class="progress" style="height:10px;">
+
+<div
+
+class="progress-bar bg-danger"
+
+style="width:<?php echo $average; ?>%">
 
 </div>
 
@@ -355,37 +1350,36 @@ Quick Actions
 
 </div>
 
-<!-- Quote -->
+</div>
+
+</div>
+
+</div>
+<!-- ==========================================
+        CHARTS
+========================================== -->
 
 <div class="row mt-4">
 
 <div class="col-lg-8">
 
-<div class="card shadow border-0">
+<div class="card border-0 shadow rounded-4">
 
-<div class="card-body">
+<div class="card-header bg-info text-white">
 
-<h4>
+<h5 class="mb-0">
 
-<i class="fas fa-lightbulb text-warning"></i>
+<i class="fas fa-chart-line me-2"></i>
 
-Motivational Quote
-
-</h4>
-
-<hr>
-
-<h5 class="text-primary">
-
-"Success is the sum of small efforts, repeated day in and day out."
+Academic Performance
 
 </h5>
 
-<p class="text-muted">
+</div>
 
-Stay focused, complete your assignments on time, and never stop learning.
+<div class="card-body">
 
-</p>
+<canvas id="marksChart" height="120"></canvas>
 
 </div>
 
@@ -395,103 +1389,382 @@ Stay focused, complete your assignments on time, and never stop learning.
 
 <div class="col-lg-4">
 
-<div class="card shadow border-0">
+<div class="card border-0 shadow rounded-4">
 
-<div class="card-body">
+<div class="card-header bg-success text-white">
 
-<h4>
+<h5 class="mb-0">
 
-Learning Progress
+<i class="fas fa-chart-pie me-2"></i>
 
-</h4>
-
-<hr>
-
-<p>Courses Completed</p>
-
-<div class="progress mb-3">
-
-<div class="progress-bar bg-success"
-
-style="width:75%;">
-
-75%
-
-</div>
-
-</div>
-
-<p>Assignments Submitted</p>
-
-<div class="progress mb-3">
-
-<div class="progress-bar bg-info"
-
-style="width:60%;">
-
-60%
-
-</div>
-
-</div>
-
-<p>Attendance</p>
-
-<div class="progress">
-
-<div class="progress-bar bg-warning"
-
-style="width:92%;">
-
-92%
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-</div>
-
-<footer class="text-center mt-5 mb-3">
-
-<hr>
-
-<h5>
-
-Forces Academy LMS
+Course Progress
 
 </h5>
 
-<p>
+</div>
 
-Developed by
+<div class="card-body">
 
-<strong>Maryam Saif</strong>
+<canvas id="progressChart"></canvas>
 
-<br>
+</div>
 
-BS Information Technology
+</div>
 
-<br>
+</div>
 
-The University of Faisalabad
+</div>
+
+<!-- ==========================================
+        ACHIEVEMENTS
+========================================== -->
+
+<div class="row mt-4">
+
+<div class="col-md-3">
+
+<div class="card border-0 shadow text-center">
+
+<div class="card-body">
+
+<i class="fas fa-medal fa-3x text-warning mb-3"></i>
+
+<h5>Excellent</h5>
+
+<p class="text-muted">
+
+Performance Grade
 
 </p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card border-0 shadow text-center">
+
+<div class="card-body">
+
+<i class="fas fa-book-reader fa-3x text-primary mb-3"></i>
+
+<h5>
+
+<?php echo $totalCourses; ?>
+
+</h5>
+
+<p class="text-muted">
+
+Courses Enrolled
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card border-0 shadow text-center">
+
+<div class="card-body">
+
+<i class="fas fa-file-upload fa-3x text-success mb-3"></i>
+
+<h5>
+
+<?php echo $totalAssignments; ?>
+
+</h5>
+
+<p class="text-muted">
+
+Assignments
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-md-3">
+
+<div class="card border-0 shadow text-center">
+
+<div class="card-body">
+
+<i class="fas fa-award fa-3x text-danger mb-3"></i>
+
+<h5>
+
+<?php echo $grade; ?>
+
+</h5>
+
+<p class="text-muted">
+
+Current Grade
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ==========================================
+        QUOTE & CALENDAR
+========================================== -->
+
+<div class="row mt-4">
+
+<div class="col-lg-8">
+
+<div class="card border-0 shadow rounded-4">
+
+<div class="card-header bg-warning">
+
+<h5 class="mb-0">
+
+⭐ Quote of the Day
+
+</h5>
+
+</div>
+
+<div class="card-body">
+
+<blockquote class="blockquote mb-0">
+
+<p>
+
+"The beautiful thing about learning is that nobody can take it away from you."
+
+</p>
+
+<footer class="blockquote-footer mt-2">
+
+B.B. King
+
+</footer>
+
+</blockquote>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="col-lg-4">
+
+<div class="card border-0 shadow rounded-4">
+
+<div class="card-header bg-secondary text-white">
+
+<h5 class="mb-0">
+
+<i class="fas fa-calendar-alt me-2"></i>
+
+Today
+
+</h5>
+
+</div>
+
+<div class="card-body text-center">
+
+<h1>
+
+<?php echo date("d"); ?>
+
+</h1>
+
+<h5>
+
+<?php echo date("F Y"); ?>
+
+</h5>
+
+<p class="text-muted">
+
+<?php echo date("l"); ?>
+
+</p>
+
+<hr>
+
+<p>
+
+Keep completing your assignments on time and check notices daily.
+
+</p>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ==========================================
+        FOOTER
+========================================== -->
+
+<footer class="mt-5">
+
+<div class="card border-0 shadow">
+
+<div class="card-body text-center">
+
+<p class="mb-1">
+
+© <?php echo date("Y"); ?>
+
+<strong>Forces Academy LMS</strong>
+
+</p>
+
+<small class="text-muted">
+
+Empowering Students Through Smart Learning
+
+</small>
+
+</div>
+
+</div>
 
 </footer>
 
 </div>
 
-</div>
+<!-- ==========================================
+        CHART JS
+========================================== -->
+
+<script>
+
+const marksChart = new Chart(
+
+document.getElementById('marksChart'),
+
+{
+
+type:'line',
+
+data:{
+
+labels:['Quiz','Assignment','Mid','Project','Final'],
+
+datasets:[{
+
+label:'Marks (%)',
+
+data:[72,80,78,90,<?php echo round($average); ?>],
+
+borderColor:'#2563eb',
+
+backgroundColor:'rgba(37,99,235,.15)',
+
+fill:true,
+
+tension:.4
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+display:true
+
+}
+
+}
+
+}
+
+}
+
+);
+
+const progressChart = new Chart(
+
+document.getElementById('progressChart'),
+
+{
+
+type:'doughnut',
+
+data:{
+
+labels:[
+
+'Completed',
+
+'Remaining'
+
+],
+
+datasets:[{
+
+data:[85,15],
+
+backgroundColor:[
+
+'#22c55e',
+
+'#e5e7eb'
+
+]
+
+}]
+
+},
+
+options:{
+
+responsive:true,
+
+plugins:{
+
+legend:{
+
+position:'bottom'
+
+}
+
+}
+
+}
+
+}
+
+);
+
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
-
 
 </html>
