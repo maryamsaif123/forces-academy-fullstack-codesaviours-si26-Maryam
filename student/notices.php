@@ -47,10 +47,6 @@ ORDER BY created_at DESC
 
 <body>
 
-<div class="main-content">
-
-<div class="container-fluid p-4">
-
 <!-- Page Header -->
 
 <div class="card border-0 shadow-sm mb-4">

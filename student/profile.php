@@ -326,26 +326,6 @@ Email Address
 
 <h6 class="text-muted">
 
-Roll Number
-
-</h6>
-
-<h5>
-
-<?php echo htmlspecialchars($student['roll_number']); ?>
-
-</h5>
-
-</div>
-
-</div>
-
-<div class="col-md-6">
-
-<div class="info-box">
-
-<h6 class="text-muted">
-
 Class
 
 </h6>

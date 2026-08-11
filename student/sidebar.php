@@ -1,71 +1,84 @@
 <!-- Sidebar -->
 <div class="sidebar">
 
+    <!-- Logo -->
     <div class="logo">
         <h3>Force Academy</h3>
         <small>LMS Portal</small>
     </div>
 
-
+    <!-- Menu -->
     <ul class="menu">
 
-        <li class="active">
+        <!-- Dashboard -->
+        <li>
             <a href="dashboard.php">
                 <i class="fa fa-home"></i>
-                Dashboard
+                <span>Dashboard</span>
             </a>
         </li>
 
-
+        <!-- Courses -->
         <li>
             <a href="courses.php">
                 <i class="fa fa-book"></i>
-                My Courses
+                <span>My Courses</span>
             </a>
         </li>
 
-
+        <!-- Assignments -->
         <li>
             <a href="assignments.php">
                 <i class="fa fa-file"></i>
-                Assignments
+                <span>Assignments</span>
             </a>
         </li>
-<li>
-    <a href="timetable.php">
-        <i class="fas fa-calendar-alt"></i>
-        <span>Timetable</span>
-    </a>
-</li>
 
+        <!-- Timetable -->
+        <li>
+            <a href="timetable.php">
+                <i class="fas fa-calendar-alt"></i>
+                <span>Timetable</span>
+            </a>
+        </li>
+
+        <!-- Results -->
         <li>
             <a href="results.php">
                 <i class="fa fa-chart-line"></i>
-                Results
+                <span>Results</span>
             </a>
         </li>
 
+        <!-- Fees -->
+        <li>
+            <a href="fees.php">
+                <i class="fas fa-money-bill-wave"></i>
+                <span>Fees</span>
+            </a>
+        </li>
 
+        <!-- Notices -->
         <li>
             <a href="notices.php">
                 <i class="fa fa-bullhorn"></i>
-                Notices
+                <span>Notices</span>
             </a>
         </li>
 
-
+        <!-- Profile -->
         <li>
             <a href="profile.php">
                 <i class="fa fa-user"></i>
-                Profile
+                <span>Profile</span>
             </a>
         </li>
 
-
-        <li>
+        <!-- Logout -->
+        <li class="logout-menu">
             <a href="logout.php">
                 <i class="fa fa-sign-out-alt"></i>
-                Logout
+                <span>Logout</span>
             </a>
         </li>
 
