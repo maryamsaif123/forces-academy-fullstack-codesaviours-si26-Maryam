@@ -1,6 +1,5 @@
 <nav class="top-navbar">
 
-
 <div class="nav-left">
 
 <button id="sidebarToggle">
@@ -14,10 +13,7 @@ Student Dashboard
 
 </div>
 
-
-
 <div class="nav-right">
-
 
 <div class="notification">
 <i class="fa fa-bell"></i>
@@ -26,11 +22,6 @@ Student Dashboard
 
 
 <div class="student-profile">
-
-<img src="assets/images/avatar.png">
-
-
-<div>
 <strong>
 <?php echo $_SESSION['student_name']; ?>
 </strong>

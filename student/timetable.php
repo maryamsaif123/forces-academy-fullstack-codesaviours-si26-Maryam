@@ -107,7 +107,6 @@ $timetable_result = mysqli_stmt_get_result($timetable);
 <?php include("sidebar.php"); ?>
 
 <?php include("navbar.php"); ?>
-
 <div class="main-content">
 
 <div class="container-fluid py-4">

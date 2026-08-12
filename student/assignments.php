@@ -62,7 +62,7 @@ Student Assignments
 
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="assets/css/dashboard.css">
 
 <style>
 
@@ -156,10 +156,9 @@ box-shadow:0 18px 35px rgba(0,0,0,.15);
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <body>
-
+<?php include("sidebar.php"); ?>
+<?php include("navbar.php"); ?>
 <div class="main-content">
-
-<!-- Header -->
 
 <div class="page-header">
 

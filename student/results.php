@@ -49,6 +49,11 @@ $totalSubjects = 0;
     <link rel="stylesheet" href="assets/css/dashboard.css">
 </head>
 
+<?php include("sidebar.php"); ?>
+
+<?php include("navbar.php"); ?>
+
+<div class="main-content">
 <body class="bg-light">
 
 <div class="container-fluid mt-4">

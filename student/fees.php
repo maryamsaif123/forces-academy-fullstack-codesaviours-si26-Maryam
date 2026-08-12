@@ -145,6 +145,9 @@ rel="stylesheet">
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
 rel="stylesheet">
 
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+<!-- Dashboard CSS -->
+<link rel="stylesheet" href="assets/css/dashboard.css">
 
 <style>
 
@@ -302,14 +305,13 @@ body {
 
 
 <body>
+<?php include("sidebar.php"); ?>
 
+<?php include("navbar.php"); ?>
 
 <div class="main-content">
 
-
-<!-- =========================================
-     PAGE HEADER
-========================================= -->
+<div class="container-fluid py-4">
 
 <div class="page-header">
 

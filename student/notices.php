@@ -46,7 +46,11 @@ ORDER BY created_at DESC
 </head>
 
 <body>
+<?php include("sidebar.php"); ?>
 
+<?php include("navbar.php"); ?>
+
+<div class="main-content">
 <!-- Page Header -->
 
 <div class="card border-0 shadow-sm mb-4">
