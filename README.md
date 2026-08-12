@@ -3,13 +3,17 @@
 
 ## Project Description
 
-A web-based **Learning Management System (LMS)** developed using **PHP, MySQL, HTML, CSS, Bootstrap, and JavaScript**. This project provides separate portals for administrators and students to efficiently manage academic activities.
+A modern and responsive **web-based Learning Management System (LMS)** developed using **PHP, MySQL, HTML, CSS, Bootstrap, and JavaScript**.
+
+The system provides separate portals for **Administrators and Students**, allowing efficient management of academic activities, students, teachers, courses, assignments, results, notices, timetables, fees, and more. This project provides separate portals for administrators and students to efficiently manage academic activities.
 
 ---
 
 ## 📌 Project Overview
 
-Forces Academy LMS is designed to simplify student and course management through a user-friendly web interface. The system allows administrators to manage students, courses, and notices, while students can securely access their dashboard, view courses, and stay updated with announcements.
+Forces Academy LMS is designed to simplify academic and student management through a modern and user-friendly web interface.
+
+The system allows administrators to manage students, teachers, courses, assignments, submissions, results, notices, timetables, and fees. Students can securely register and log in to access their personalized dashboard, courses, assignments, results, timetable, notices, profile, and fee records.
 
 ---
 
@@ -24,7 +28,13 @@ Forces Academy LMS is designed to simplify student and course management through
 - Manage Timetable
 - Manage Teachers
 - Manage Assignmets
+- Admin Profile Management
+- Manage Reports
 - Manage Results
+- Manage Timetable
+- Manage Assignments Submissions
+- Provide Feedback on Student Submissions
+- Manage Student Fees
 - Manage Settings
 - Manage Reports
 - Responsive Sidebar & Navbar
@@ -52,141 +62,103 @@ Forces Academy LMS is designed to simplify student and course management through
 - MySQL
 - HTML5
 - CSS3
+- Chart.js
 - Bootstrap 5
 - JavaScript
 - Font Awesome
 - XAMPP
 
 ---
+## 📁 Project Structure
 
-## 📂 Project Structure
-
-
-Forces-Academy-LMS/
+forces-academy-lms/
 │
-├── admin/
-│ │
-│ ├── dashboard.php
-│ ├── login.php
-│ ├── logout.php
-│ │
-│ ├── students.php
-│ ├── add_student.php
-│ ├── edit_student.php
-│ ├── delete_student.php
-│ │
-│ ├── courses.php
-│ ├── add_course.php
-│ ├── edit_course.php
-│ ├── delete_course.php
-│ │
-│ ├── assignments.php
-│ ├── add_assignment.php
-│ ├── edit_assignment.php
-│ ├── delete_assignment.php
-│ │
-│ ├── submissions.php
-│ ├── view_submission.php
-│ ├── grade_submission.php
-│ │
-│ ├── notices.php
-│ ├── add_notice.php
-│ ├── edit_notice.php
-│ ├── delete_notice.php
-│ │
-│ └── includes/
-│ ├── sidebar.php
-│ ├── navbar.php
-│ └── footer.php
-│
+├── Admin/
+│   ├── dashboard.php
+│   ├── login.php
+│   ├── profile.php
+│   ├── manage_students.php
+│   ├── manage_teachers.php
+│   ├── manage_courses.php
+│   ├── manage_assignments.php
+│   ├── manage_submissions.php
+│   ├── manage_notices.php
+│   ├── manage_results.php
+│   ├── timetable.php
+│   ├── assets/
+│   │   ├── css/
+│   │   ├── images/
+│   │   └── js/
+│   └── includes/
 │
 ├── student/
-│ │
-│ ├── dashboard.php
-│ ├── login.php
-│ ├── register.php
-│ ├── logout.php
-│ │
-│ ├── profile.php
-│ ├── edit_profile.php
-│ │
-│ ├── courses.php
-│ ├── course_details.php
-│ │
-│ ├── assignments.php
-│ ├── submit_assignment.php
-│ ├── my_submissions.php
-│ │
-│ ├── notices.php
-│ │
-│ └── includes/
-│ ├── sidebar.php
-│ ├── navbar.php
-│ └── footer.php
-│
+│   ├── dashboard.php
+│   ├── login.php
+│   ├── register.php
+│   ├── profile.php
+│   ├── courses.php
+│   ├── assignments.php
+│   ├── results.php
+│   ├── notices.php
+│   ├── timetable.php
+│   ├── fees.php
+│   ├── sidebar.php
+│   ├── navbar.php
+│   └── assets/
+│       ├── css/
+│       └── images/
+│           ├── male-avatar.png
+│           └── female-avatar.png
 │
 ├── config/
-│ │
-│ └── database.php
+│   └── database.php
 │
+├── uploads/
+│   ├── students/
+│   ├── teachers/
+│   └── assignments/
 │
-├── assets/
-│ │
-│ ├── css/
-│ │ ├── style.css
-│ │ ├── dashboard.css
-│ │ ├── admin.css
-│ │ └── student.css
-│ │
-│ ├── js/
-│ │ ├── script.js
-│ │ └── dashboard.js
-│ │
-│ ├── images/
-│ │ ├── logo.png
-│ │ ├── admin-avatar.png
-│ │ ├── student-avatar.png
-│ │ └── icons/
-│ │
-│ └── uploads/
-│ │
-│ ├── assignments/
-│ ├── submissions/
-│ ├── profile_images/
-│ └── course_files/
+├── js/
+│   └── dashboard.js
 │
-│
-├── database/
-│ │
-│ └── forces_academy.sql
-│
-│
-├── includes/
-│ │
-│ ├── auth.php
-│ ├── session.php
-│ └── functions.php
-│
-│
-├── index.php
-├── about.php
-├── contact.php
-├── login.php
-├── register.php
-├── logout.php
-│
-├── .gitignore
-├── README.md
+└── README.md
 
+### 🔐 User Roles
+## 👨‍💼 Administrator
 
+The administrator can manage:
+
+- Students
+- Teachers
+- Courses
+- Assignments
+- Assignment Submissions
+- Student Feedback
+- Notices
+- Results
+- Timetable
+- Fees
+- Reports
+- Settings
+## 🎓 Student
+
+Students can access:
+
+- Dashboard
+- Profile
+- Courses
+- Assignments
+- Assignment Submission
+- Timetable
+- Results
+- Notices
+- Fees
 ## 🚀 Future Improvements
 
 =- Online Quiz System
 - Attendance Management
-- Fee Management
-- Chat System
 - Certificate Generation
-
+- Email Notifications
 ---
 
 ## 👩‍💻 Developer
