@@ -136,6 +136,17 @@ $current = basename($_SERVER['PHP_SELF']);
             Timetable
         </a>
     </li>
+    <li class="<?= ($current=="fees.php") ? 'active' : ''; ?>">
+
+    <a href="fees.php">
+
+        <i class="fas fa-money-bill-wave"></i>
+
+        Fees
+
+    </a>
+
+</li>
         <li class="<?= ($current=="reports.php")?'active':''; ?>">
 
             <a href="reports.php">
@@ -155,38 +166,8 @@ $current = basename($_SERVER['PHP_SELF']);
         </li>
     <!-- Bottom Card -->
 
-    <div class="academy-card">
-
-        <img src="assets/images/graduation.png" width="130">
-
-        <h4>Forces Academy</h4>
-
         <p>
-            Excellence in Education
-
+            Forces Academy LMS &copy; 2024
         </p>
     </div>
 
-    <!-- Logout -->
-
-    <div class="logout-area">
-
-        <a href="logout.php" class="logout-btn">
-
-            <i class="fas fa-sign-out-alt"></i>
-
-            Logout
-
-        </a>
-
-    </div>
-
-</div>
-
-            Logout
-
-        </a>
-
-    </div>
-
-</div>

@@ -75,8 +75,6 @@ mysqli_stmt_bind_param($delete, "i", $id);
 
 if (mysqli_stmt_execute($delete)) {
     
-onclick="return confirm('Are you sure you want to permanently delete this student? This action cannot be undone.')"
-
     $_SESSION['success'] = "Student deleted successfully.";
 
 } else {

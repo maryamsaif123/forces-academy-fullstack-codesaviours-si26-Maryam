@@ -120,8 +120,6 @@ results.*,
 
 students.full_name,
 
-students.roll_number,
-
 courses.course_name
 
 FROM results
@@ -201,7 +199,138 @@ rel="stylesheet"
 href="assets/css/dashboard.css">
 
 <style>
+/* =========================================
+   SIDEBAR
+========================================= */
 
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 270px;
+    height: 100vh;
+    background: #14263d;
+    color: #fff;
+    z-index: 1000;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 5px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Logo Area */
+
+.logo-area {
+    text-align: center;
+    padding: 25px 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.logo-area .logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 5px;
+}
+
+.logo-area h3 {
+    color: #fff;
+    font-size: 19px;
+    font-weight: 700;
+    margin: 5px 0;
+}
+
+.logo-area span {
+    color: #93b4df;
+    font-size: 12px;
+}
+
+/* Sidebar Menu */
+
+.sidebar-menu {
+    list-style: none;
+    padding: 18px 12px;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin-bottom: 6px;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    color: #dbe7f5;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-menu li a i {
+    width: 20px;
+    text-align: center;
+    font-size: 15px;
+}
+
+/* Hover */
+
+.sidebar-menu li a:hover {
+    background: rgba(37, 99, 235, 0.25);
+    color: #fff;
+    transform: translateX(3px);
+}
+
+/* Active */
+
+.sidebar-menu li.active a {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.30);
+}
+
+/* Logout */
+
+.logout-area {
+    margin-top: auto;
+    padding: 15px;
+}
+
+.logout-area .logout-btn,
+.logout-area .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+}
+
+/* Sidebar Scrollbar */
+
+.sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #2563eb;
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
 body{
 
 background:#f4f7fb;
@@ -249,10 +378,10 @@ overflow:hidden;
 </head>
 
 <body>
+<?php include("includes/sidebar.php"); ?>
 
 <div class="wrapper">
 
-<?php include("includes/sidebar.php"); ?>
 
 <div class="main-content">
 
@@ -550,8 +679,6 @@ Student Results
 
 <th>Student</th>
 
-<th>Roll No</th>
-
 <th>Course</th>
 
 <th>Subject</th>
@@ -627,17 +754,7 @@ class="rounded-circle border me-3">
 </div>
 
 </div>
-
-</td>
-
 <td>
-
-<?php echo htmlspecialchars($row['roll_number']); ?>
-
-</td>
-
-<td>
-
 <?php
 
 echo htmlspecialchars(

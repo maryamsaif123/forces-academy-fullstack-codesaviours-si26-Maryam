@@ -1,19 +1,18 @@
 <?php
+
 session_start();
 
-if(!isset($_SESSION['admin_id'])){
+$current = basename($_SERVER['PHP_SELF']);
 
+if (!isset($_SESSION['admin_id'])) {
     header("Location: login.php");
     exit();
-
 }
 
 include("../config/database.php");
 ?>
 
 <?php
-
-include("../config/database.php");
 
 // Admin Information
 $admin_id = $_SESSION['admin_id'];
@@ -25,8 +24,7 @@ LIMIT 1");
 
 $admin = mysqli_fetch_assoc($adminQuery);
 
-$admin_name = $admin['full_name'] ?? "Administrator";
-
+$admin_name = $admin['username'] ?? "Administrator";
 
 
 /*==================================================
@@ -290,6 +288,138 @@ border-top:6px solid #0d6efd;
 animation:spin 1s linear infinite;
 
 }
+/* =========================================
+   SIDEBAR
+========================================= */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 270px;
+    height: 100vh;
+    background: #14263d;
+    color: #fff;
+    z-index: 1000;
+    overflow-y: auto;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 5px 0 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Logo Area */
+
+.logo-area {
+    text-align: center;
+    padding: 25px 15px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.logo-area .logo {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 5px;
+}
+
+.logo-area h3 {
+    color: #fff;
+    font-size: 19px;
+    font-weight: 700;
+    margin: 5px 0;
+}
+
+.logo-area span {
+    color: #93b4df;
+    font-size: 12px;
+}
+
+/* Sidebar Menu */
+
+.sidebar-menu {
+    list-style: none;
+    padding: 18px 12px;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin-bottom: 6px;
+}
+
+.sidebar-menu li a {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    color: #dbe7f5;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 10px;
+    transition: all 0.3s ease;
+}
+
+.sidebar-menu li a i {
+    width: 20px;
+    text-align: center;
+    font-size: 15px;
+}
+
+/* Hover */
+
+.sidebar-menu li a:hover {
+    background: rgba(37, 99, 235, 0.25);
+    color: #fff;
+    transform: translateX(3px);
+}
+
+/* Active */
+
+.sidebar-menu li.active a {
+    background: #2563eb;
+    color: #fff;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.30);
+}
+
+/* Logout */
+
+.logout-area {
+    margin-top: auto;
+    padding: 15px;
+}
+
+.logout-area .logout-btn,
+.logout-area .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+}
+
+/* Sidebar Scrollbar */
+
+.sidebar::-webkit-scrollbar {
+    width: 5px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #2563eb;
+    border-radius: 10px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent;
+}
 
 @keyframes spin{
 
@@ -322,89 +452,102 @@ transform:rotate(360deg);
 
     <div class="logo-area">
 
-        <img src="assets/images/logo.png" class="logo" alt="Logo">
-
+<img src="assets/images/logo.png"
+     class="logo"
+     alt="Forces Academy Logo">
         <h3>Forces Academy</h3>
 
         <span>LMS Admin</span>
 
     </div>
 
-
     <ul class="sidebar-menu">
 
-        <li class="active">
-            <a href="dashboard.php">
-                <i class="fas fa-home"></i>
-                Dashboard
-            </a>
-        </li>
+    <li class="<?= ($current == 'dashboard.php') ? 'active' : ''; ?>">
+        <a href="dashboard.php">
+            <i class="fas fa-home"></i>
+            Dashboard
+        </a>
+    </li>
 
-        <li>
-            <a href="manage_students.php">
-                <i class="fas fa-user-graduate"></i>
-                Students
-            </a>
-        </li>
+    <li class="<?= ($current == 'manage_students.php') ? 'active' : ''; ?>">
+        <a href="manage_students.php">
+            <i class="fas fa-user-graduate"></i>
+            Students
+        </a>
+    </li>
 
-        <li>
-            <a href="manage_teachers.php">
-                <i class="fas fa-chalkboard-teacher"></i>
-                Teachers
-            </a>
-        </li>
+    <li class="<?= ($current == 'manage_teachers.php') ? 'active' : ''; ?>">
+        <a href="manage_teachers.php">
+            <i class="fas fa-chalkboard-teacher"></i>
+            Teachers
+        </a>
+    </li>
 
-        <li>
-            <a href="manage_courses.php">
-                <i class="fas fa-book-open"></i>
-                Courses
-            </a>
-        </li>
+    <li class="<?= ($current == 'manage_courses.php') ? 'active' : ''; ?>">
+        <a href="manage_courses.php">
+            <i class="fas fa-book-open"></i>
+            Courses
+        </a>
+    </li>
 
-        <li>
-            <a href="manage_assignments.php">
-                <i class="fas fa-file-alt"></i>
-                Assignments
-            </a>
-        </li>
+    <li class="<?= ($current == 'manage_assignments.php') ? 'active' : ''; ?>">
+        <a href="manage_assignments.php">
+            <i class="fas fa-file-alt"></i>
+            Assignments
+        </a>
+    </li>
 
-        <li>
-            <a href="manage_submissions.php">
-                <i class="fas fa-upload"></i>
-                Submissions
-            </a>
-        </li>
-        <li>
-    <a href="manage_results.php">
-        <i class="fas fa-chart-line"></i>
-        Results
-    </a>
-</li>
-<li>
-            <a href="manage_notices.php">
-                <i class="fas fa-bullhorn"></i>
-                Notices
-            </a>
-        </li>
-        <li>
-    <a href="timetable.php">
-        <i class="fas fa-calendar-alt"></i>
-        <span>Timetable</span>
-    </a>
-</li>
-</li>
-        <li>
-            <a href="reports.php">
-                <i class="fas fa-chart-bar"></i>
-                Reports
-            </a>
-        </li>
-        <li>
-            <a href="settings.php">
-                <i class="fas fa-cog"></i>
-                Settings
-            </a>
-        </li>
+    <li class="<?= ($current == 'manage_submissions.php') ? 'active' : ''; ?>">
+        <a href="manage_submissions.php">
+            <i class="fas fa-upload"></i>
+            Submissions
+        </a>
+    </li>
+
+    <li class="<?= ($current == 'manage_results.php') ? 'active' : ''; ?>">
+        <a href="manage_results.php">
+            <i class="fas fa-chart-line"></i>
+            Results
+        </a>
+    </li>
+
+    <li class="<?= ($current == 'manage_notices.php') ? 'active' : ''; ?>">
+        <a href="manage_notices.php">
+            <i class="fas fa-bullhorn"></i>
+            Notices
+        </a>
+    </li>
+
+    <li class="<?= ($current == 'timetable.php') ? 'active' : ''; ?>">
+        <a href="timetable.php">
+            <i class="fas fa-calendar-alt"></i>
+            Timetable
+        </a>
+    </li>
+
+    <li class="<?= ($current == 'fees.php') ? 'active' : ''; ?>">
+        <a href="fees.php">
+            <i class="fas fa-money-bill-wave"></i>
+            Fees
+        </a>
+    </li>
+
+    <li class="<?= ($current == 'reports.php') ? 'active' : ''; ?>">
+        <a href="reports.php">
+            <i class="fas fa-chart-pie"></i>
+            Reports
+        </a>
+    </li>
+
+    <li class="<?= ($current == 'settings.php') ? 'active' : ''; ?>">
+        <a href="settings.php">
+            <i class="fas fa-cog"></i>
+            Settings
+        </a>
+    </li>
+
+</ul>
     </ul>
     <div class="logout-area">
 
@@ -485,8 +628,6 @@ placeholder="Search anything...">
 </li>
 
 
-
-
 <li class="nav-item me-4">
 
 <a href="#">
@@ -503,9 +644,6 @@ placeholder="Search anything...">
 
 </li>
 
-
-
-
 <li class="nav-item dropdown">
 
 <a
@@ -518,7 +656,7 @@ href="#">
 
 <img
 
-src="assets/images/avatar.png"
+src="assets\images\avatar.png"
 
 class="admin-avatar">
 
@@ -583,9 +721,6 @@ Logout
 </div>
 
 </nav>
-
-
-
 
 <!-- ==============================
         HERO SECTION
@@ -810,123 +945,111 @@ class="img-fluid banner-image">
 
 </a>
 
-
-
 <!-- ==========================================
-            QUICK ACTIONS
-===========================================-->
+        QUICK ACTIONS
+=========================================== -->
 
 <div class="row mt-3">
 
-<div class="col-lg-12">
+    <div class="col-lg-12">
 
-<div class="card shadow border-0">
+        <div class="card shadow border-0">
 
-<div class="card-body">
+            <div class="card-body">
 
-<h4 class="mb-4">
+                <h4 class="mb-4">
+                    <i class="fas fa-bolt text-warning"></i>
+                    Quick Actions
+                </h4>
 
-<i class="fas fa-bolt text-warning"></i>
+                <div class="row g-4">
 
-Quick Actions
+                    <!-- Manage Students -->
+                    <div class="col-lg-2 col-md-4 col-6">
 
-</h4>
+                        <a href="manage_students.php" class="quick-box">
 
-<div class="row g-4">
+                            <i class="fas fa-user-graduate"></i>
 
-<div class="col-lg-2 col-md-4 col-6">
+                            <span>Manage Students</span>
 
-<a href="add_student.php" class="quick-box">
+                        </a>
 
-<i class="fas fa-user-plus"></i>
-
-<span>Add Student</span>
-
-</a>
-
-</div>
+                    </div>
 
 
-<div class="col-lg-2 col-md-4 col-6">
+                    <!-- Manage Teachers -->
+                    <div class="col-lg-2 col-md-4 col-6">
 
-<a href="add_teacher.php" class="quick-box">
+                        <a href="manage_teachers.php" class="quick-box">
 
-<i class="fas fa-user-tie"></i>
+                            <i class="fas fa-chalkboard-teacher"></i>
 
-<span>Add Teacher</span>
+                            <span>Manage Teachers</span>
 
-</a>
+                        </a>
 
-</div>
-
-
-
-<div class="col-lg-2 col-md-4 col-6">
-
-<a href="add_course.php" class="quick-box">
-
-<i class="fas fa-book"></i>
-
-<span>Add Course</span>
-
-</a>
-
-</div>
+                    </div>
 
 
+                    <!-- Manage Courses -->
+                    <div class="col-lg-2 col-md-4 col-6">
 
-<div class="col-lg-2 col-md-4 col-6">
+                        <a href="manage_courses.php" class="quick-box">
 
-<a href="add_assignment.php" class="quick-box">
+                            <i class="fas fa-book-open"></i>
 
-<i class="fas fa-file-circle-plus"></i>
+                            <span>Manage Courses</span>
 
-<span>Assignment</span>
+                        </a>
 
-</a>
-
-</div>
-
-
-
-<div class="col-lg-2 col-md-4 col-6">
-
-<a href="manage_notices.php" class="quick-box">
-
-<i class="fas fa-bullhorn"></i>
-
-<span>Notice</span>
-
-</a>
-
-</div>
+                    </div>
 
 
+        <!-- Manage Assignments -->
+                    <div class="col-lg-2 col-md-4 col-6">
+                        <a href="manage_assignments.php" class="quick-box">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Manage Assignments</span>
+                        </a>
+                    </div>
 
-<div class="col-lg-2 col-md-4 col-6">
+                    <!-- Notices -->
+                    <div class="col-lg-2 col-md-4 col-6">
 
-<a href="reports.php" class="quick-box">
+                        <a href="manage_notices.php" class="quick-box">
 
-<i class="fas fa-chart-line"></i>
+                            <i class="fas fa-bullhorn"></i>
 
-<span>Reports</span>
+                            <span>Notices</span>
 
-</a>
+                        </a>
 
-</div>
+                    </div>
 
-</div>
 
-</div>
+                    <!-- Reports -->
+                    <div class="col-lg-2 col-md-4 col-6">
+
+                        <a href="reports.php" class="quick-box">
+
+                            <i class="fas fa-chart-line"></i>
+
+                            <span>Reports</span>
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </div>
-
-</div>
-
-</div>
-
-
-
 <!-- ==========================================
         CHART SECTION STARTS
 ===========================================-->
@@ -982,7 +1105,7 @@ System Statistics
 </div>
 
 </div>
-s
+
 <!-- ==========================================
         RECENT NOTICES & RECENT ACTIVITIES
 ========================================== -->
