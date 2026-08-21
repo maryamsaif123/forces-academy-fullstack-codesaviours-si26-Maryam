@@ -1,4 +1,3 @@
-# forces-academy-fullstack-codesaviours-si26-Maryam
 # Forces Academy LMS
 
 ## Project Description
@@ -16,6 +15,9 @@ Forces Academy LMS is designed to simplify academic and student management throu
 The system allows administrators to manage students, teachers, courses, assignments, submissions, results, notices, timetables, and fees. Students can securely register and log in to access their personalized dashboard, courses, assignments, results, timetable, notices, profile, and fee records.
 
 ---
+## 🚀 Live Demo
+
+🔗 Live Website: https://forcesacademy23.infinityfreeapp.com
 
 ## ✨ Features
 
@@ -70,58 +72,33 @@ The system allows administrators to manage students, teachers, courses, assignme
 
 ---
 ## 📁 Project Structure
-
-forces-academy-lms/
+forces-academy/
 │
-├── Admin/
-│   ├── dashboard.php
-│   ├── login.php
-│   ├── profile.php
-│   ├── manage_students.php
-│   ├── manage_teachers.php
-│   ├── manage_courses.php
-│   ├── manage_assignments.php
-│   ├── manage_submissions.php
-│   ├── manage_notices.php
-│   ├── manage_results.php
-│   ├── timetable.php
-│   ├── assets/
-│   │   ├── css/
-│   │   ├── images/
-│   │   └── js/
-│   └── includes/
-│
-├── student/
-│   ├── dashboard.php
-│   ├── login.php
-│   ├── register.php
-│   ├── profile.php
-│   ├── courses.php
-│   ├── assignments.php
-│   ├── results.php
-│   ├── notices.php
-│   ├── timetable.php
-│   ├── fees.php
-│   ├── sidebar.php
-│   ├── navbar.php
-│   └── assets/
-│       ├── css/
-│       └── images/
-│           ├── male-avatar.png
-│           └── female-avatar.png
-│
-├── config/
-│   └── database.php
-│
-├── uploads/
-│   ├── students/
-│   ├── teachers/
-│   └── assignments/
-│
-├── js/
-│   └── dashboard.js
-│
+├── admin/              # Admin panel files
+├── student/            # Student portal files
+├── assets/             # CSS, JavaScript, and images
+├── config/             # Database configuration
+├── database/           # Database SQL file
+├── screenshots/        # Project screenshots
+├── index.php
 └── README.md
+## 📸 Project Screenshots
+
+### 🎓 Student Dashboard
+
+![Student Dashboard](student-dashboard.png)
+
+### 👨‍💼 Admin Dashboard
+
+![Admin Dashboard](admin-dashboard.png)
+
+### 📚 Courses
+
+![Courses](courses.png)
+
+### 📝 Assignments
+
+![Assignments](assignments.png)
 
 ### 🔐 User Roles
 ## 👨‍💼 Administrator
@@ -140,6 +117,7 @@ The administrator can manage:
 - Fees
 - Reports
 - Settings
+
 ## 🎓 Student
 
 Students can access:
@@ -153,6 +131,29 @@ Students can access:
 - Results
 - Notices
 - Fees
+
+### ⚙️ Installation and Setup
+Clone or download this repository.
+Move the project folder to the XAMPP htdocs directory.
+Start Apache and MySQL from the XAMPP Control Panel.
+Create a database in phpMyAdmin.
+Import the provided SQL database file.
+Update the database configuration in the config file.
+Open the project in your browser using:
+http://localhost/your-project-folder/
+
+### 🎯 Learning Outcomes
+
+Through this project, I gained practical experience in:
+
+Full Stack Web Development
+PHP and MySQL database integration
+CRUD operations
+User authentication and session management
+Responsive web design
+Debugging and testing
+Git and GitHub version control
+Live website deployment
 ## 🚀 Future Improvements
 
 =- Online Quiz System
@@ -170,11 +171,12 @@ BS Information Technology (BSIT)
 The University of Faisalabad
 
 ---
+## 🙏 Acknowledgment
+
+Special thanks to Code Saviours for providing the opportunity to work on this project during my Full Stack Web Development internship.
 
 ## 📄 License
-
 This project is developed for educational and internship purposes.
-
----
+--
 
 ⭐ If you found this project useful, consider giving it a star on GitHub.
